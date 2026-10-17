@@ -10,9 +10,6 @@ import {
   Clock,
   Eye,
   RefreshCw,
-  Camera,
-  XCircle,
-  FileCheck,
 } from "lucide-react";
 import { RiskBadge, ActionBadge } from "../common/RiskBadge";
 import { CaseDetailModal } from "./CaseDetailModal";
@@ -66,49 +63,49 @@ export function CaseQueueView({
     switch (status) {
       case "NEW_ALERT":
         return (
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-950 text-rose-300 border border-rose-800 font-bold animate-pulse">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#FCE5E3] text-[#D52222] border border-[#D52222]/40 font-bold">
             NEW ALERT
           </span>
         );
       case "VERIFICATION_REQUIRED":
         return (
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-purple-950 text-purple-300 border border-purple-800">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#FFF5D6] text-[#E7A500] border border-[#E7A500]/40 font-bold">
             VERIFY REQUIRED
           </span>
         );
       case "UNDER_INVESTIGATION":
         return (
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-950 text-amber-300 border border-amber-800">
-            UNDER INVESTIGATION
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#F1F0ED] text-[#17191B] border border-[#D9D6CD] font-bold">
+            INVESTIGATION
           </span>
         );
       case "MONITORING":
         return (
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-950 text-blue-300 border border-blue-800">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#F1F0ED] text-[#5D6266] border border-[#D9D6CD]">
             MONITORING
           </span>
         );
       case "VERIFIED_LEGITIMATE":
         return (
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-800">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#E8F4E8] text-[#24813A] border border-[#24813A]/40 font-bold">
             LEGITIMATE
           </span>
         );
       case "CONFIRMED_ACCOUNT_HANDOFF":
         return (
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-red-950 text-red-300 border border-red-700 font-bold">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#FCE5E3] text-[#D52222] border border-[#D52222]/50 font-bold">
             CONFIRMED HANDOFF
           </span>
         );
       case "DISMISSED_ALERT":
         return (
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#F1F0ED] text-[#8B8D8C] border border-[#D9D6CD]">
             DISMISSED
           </span>
         );
       default:
         return (
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-300">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#F1F0ED] text-[#5D6266] border border-[#D9D6CD]">
             {status}
           </span>
         );
@@ -118,34 +115,43 @@ export function CaseQueueView({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-[#0c162c] border border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] shadow-xs">
         <div>
-          <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-rose-400" />
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-mono font-bold tracking-widest text-[#D52222] uppercase">
+              TRIAGE & INVESTIGATION
+            </span>
+            <span className="text-[#8B8D8C] text-xs font-mono">•</span>
+            <span className="text-[11px] font-mono text-[#5D6266]">
+              {cases.length} TOTAL CASES IN QUEUE
+            </span>
+          </div>
+          <h1 className="text-xl font-bold text-[#17191B] tracking-tight flex items-center gap-2 mt-1 uppercase">
+            <ShieldAlert className="w-5 h-5 text-[#D52222]" />
             Security Investigation Queue
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Triage, investigate, and record auditable decisions for anomalous sessions flagged by the TrueRide risk engine.
+          <p className="text-xs text-[#5D6266] mt-0.5">
+            Triage, investigate, and record auditable decisions for anomalous sessions flagged by the TrueRide continuous identity-risk engine.
           </p>
         </div>
 
         <button
           onClick={fetchCases}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono text-slate-300 hover:text-white bg-slate-800 border border-slate-700 transition cursor-pointer self-start sm:self-auto"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] text-xs font-mono font-bold text-[#17191B] bg-[#F1F0ED] hover:bg-[#D9D6CD] border border-[#D9D6CD] transition cursor-pointer self-start sm:self-auto"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-cyan-400" : ""}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#17191B]" : ""}`} />
           <span>Refresh</span>
         </button>
       </div>
 
       {/* Filter Toolbar */}
-      <div className="p-4 rounded-xl bg-[#0c162c] border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="p-3 bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs">
+        <div className="flex flex-wrap items-center gap-1.5">
           {/* Status Tabs */}
           {[
             { id: "ALL", label: "All Cases" },
             { id: "NEW_ALERT", label: "New Alerts" },
-            { id: "VERIFICATION_REQUIRED", label: "Verification Required" },
+            { id: "VERIFICATION_REQUIRED", label: "Verify Required" },
             { id: "UNDER_INVESTIGATION", label: "Under Investigation" },
             { id: "VERIFIED_LEGITIMATE", label: "Legitimate" },
             { id: "CONFIRMED_ACCOUNT_HANDOFF", label: "Confirmed Handoffs" },
@@ -154,10 +160,10 @@ export function CaseQueueView({
             <button
               key={tab.id}
               onClick={() => setStatusFilter(tab.id)}
-              className={`px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
+              className={`px-2.5 py-1 rounded-[2px] font-mono text-xs font-semibold transition cursor-pointer border ${
                 statusFilter === tab.id
-                  ? "bg-slate-800 text-cyan-300 border border-cyan-500/30"
-                  : "text-slate-400 hover:bg-slate-800/40 hover:text-slate-200"
+                  ? "bg-[#FFD900] text-[#17191B] border-[#FFD900] font-bold shadow-xs"
+                  : "text-[#5D6266] hover:bg-[#F1F0ED] border-transparent"
               }`}
             >
               {tab.label}
@@ -167,43 +173,43 @@ export function CaseQueueView({
 
         {/* Search Input */}
         <form onSubmit={handleSearchSubmit} className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
+          <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-[#8B8D8C]" />
           <input
             type="text"
             placeholder="Search Case, Rider ID, or Name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 w-64"
+            className="pl-8 pr-3 py-1.5 bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] text-xs text-[#17191B] placeholder-[#8B8D8C] focus:outline-none focus:border-[#17191B] w-64 font-mono"
           />
         </form>
       </div>
 
       {/* Cases Table */}
-      <div className="rounded-2xl bg-[#0c162c] border border-slate-800 overflow-hidden shadow-lg">
+      <div className="rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-950/80 text-slate-400 font-mono uppercase text-[10px] tracking-wider border-b border-slate-800">
+            <thead className="bg-[#F1F0ED] text-[#5D6266] font-mono uppercase text-[11px] tracking-wider border-b border-[#D9D6CD]">
               <tr>
                 <th className="py-3 px-4">Case #</th>
                 <th className="py-3 px-4">Rider</th>
-                <th className="py-3 px-4">Risk Level</th>
-                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4">Risk Score</th>
+                <th className="py-3 px-4">Investigation Status</th>
                 <th className="py-3 px-4">Priority</th>
                 <th className="py-3 px-4">Recommendation</th>
-                <th className="py-3 px-4">Timestamp</th>
-                <th className="py-3 px-4 text-right">Action</th>
+                <th className="py-3 px-4">Last Updated</th>
+                <th className="py-3 px-4 text-right">Inspect</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-[#D9D6CD]">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500 font-mono">
+                  <td colSpan={8} className="py-12 text-center text-[#8B8D8C] font-mono">
                     Loading queue records...
                   </td>
                 </tr>
               ) : cases.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500">
+                  <td colSpan={8} className="py-12 text-center text-[#8B8D8C] font-mono">
                     No security cases found matching criteria.
                   </td>
                 </tr>
@@ -211,16 +217,16 @@ export function CaseQueueView({
                 cases.map((c) => (
                   <tr
                     key={c.id}
-                    className="hover:bg-slate-800/40 transition-colors"
+                    className="hover:bg-[#F7F7F5] transition-colors"
                   >
-                    <td className="py-3 px-4 font-mono font-bold text-white">
+                    <td className="py-3 px-4 font-mono font-bold text-[#17191B]">
                       {c.caseNumber}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="font-medium text-slate-200">
+                      <div className="font-bold text-[#17191B]">
                         {c.rider?.name || c.riderId}
                       </div>
-                      <div className="text-[10px] font-mono text-slate-500">
+                      <div className="text-[10px] font-mono text-[#5D6266]">
                         {c.riderId} • {c.rider?.city}
                       </div>
                     </td>
@@ -236,12 +242,12 @@ export function CaseQueueView({
                     <td className="py-3 px-4">{getStatusBadge(c.status)}</td>
                     <td className="py-3 px-4">
                       <span
-                        className={`font-mono text-[10px] font-semibold ${
+                        className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[1px] border ${
                           c.priority === "CRITICAL"
-                            ? "text-rose-400"
+                            ? "bg-[#FCE5E3] text-[#D52222] border-[#D52222]/30"
                             : c.priority === "HIGH"
-                            ? "text-amber-400"
-                            : "text-slate-400"
+                            ? "bg-[#FFF5D6] text-[#E7A500] border-[#E7A500]/30"
+                            : "bg-[#F1F0ED] text-[#5D6266] border-[#D9D6CD]"
                         }`}
                       >
                         {c.priority}
@@ -252,7 +258,7 @@ export function CaseQueueView({
                         <ActionBadge action={c.assessment.recommendedAction} />
                       )}
                     </td>
-                    <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
+                    <td className="py-3 px-4 text-[#5D6266] font-mono text-[11px]">
                       {new Date(c.createdAt).toLocaleDateString([], {
                         month: "short",
                         day: "numeric",
@@ -263,9 +269,9 @@ export function CaseQueueView({
                     <td className="py-3 px-4 text-right">
                       <button
                         onClick={() => setSelectedCaseId(c.id)}
-                        className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 font-mono text-xs flex items-center gap-1 border border-slate-700 ml-auto cursor-pointer transition"
+                        className="px-3 py-1 rounded-[2px] bg-[#F1F0ED] hover:bg-[#D9D6CD] text-[#17191B] font-mono text-xs font-bold flex items-center gap-1 border border-[#D9D6CD] ml-auto cursor-pointer transition shadow-xs"
                       >
-                        <Eye className="w-3 h-3" />
+                        <Eye className="w-3.5 h-3.5 text-[#17191B]" />
                         <span>Inspect</span>
                       </button>
                     </td>

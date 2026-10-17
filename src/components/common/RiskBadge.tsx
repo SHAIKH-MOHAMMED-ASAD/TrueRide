@@ -15,35 +15,35 @@ export function RiskBadge({
 }: RiskBadgeProps) {
   const normLevel = level.toUpperCase();
 
-  let colorClasses = "bg-emerald-950/70 text-emerald-400 border-emerald-700/60";
-  let dotColor = "bg-emerald-400";
+  let colorClasses = "bg-[#E8F4E8] text-[#24813A] border-[#24813A]/30";
+  let dotColor = "bg-[#24813A]";
 
   if (normLevel === "HIGH") {
-    colorClasses = "bg-rose-950/80 text-rose-300 border-rose-600/70 glow-red";
-    dotColor = "bg-rose-500 animate-pulse";
+    colorClasses = "bg-[#FCE5E3] text-[#D52222] border-[#D52222]/40";
+    dotColor = "bg-[#D52222]";
   } else if (normLevel === "MEDIUM") {
-    colorClasses = "bg-amber-950/70 text-amber-300 border-amber-600/70 glow-amber";
-    dotColor = "bg-amber-400";
+    colorClasses = "bg-[#FFF5D6] text-[#E7A500] border-[#E7A500]/40";
+    dotColor = "bg-[#E7A500]";
   } else {
-    colorClasses = "bg-cyan-950/60 text-cyan-300 border-cyan-800/70";
-    dotColor = "bg-cyan-400";
+    colorClasses = "bg-[#E8F4E8] text-[#24813A] border-[#24813A]/30";
+    dotColor = "bg-[#24813A]";
   }
 
   const sizeClasses =
     size === "sm"
-      ? "text-xs px-2 py-0.5"
+      ? "text-[11px] px-1.5 py-0.5"
       : size === "lg"
-      ? "text-sm px-3.5 py-1.5 font-semibold"
-      : "text-xs px-2.5 py-1 font-medium";
+      ? "text-xs px-2.5 py-1 font-bold"
+      : "text-[11px] px-2 py-0.5 font-semibold";
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full border ${colorClasses} ${sizeClasses}`}
+      className={`inline-flex items-center gap-1.5 rounded-[2px] border font-mono tracking-tight ${colorClasses} ${sizeClasses}`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+      <span className={`w-1.5 h-1.5 rounded-none ${dotColor}`} />
       <span>{normLevel} RISK</span>
       {showScore && score !== undefined && (
-        <span className="font-mono opacity-90 pl-1 border-l border-current/20">
+        <span className="font-mono font-bold opacity-90 pl-1 border-l border-current/20">
           {score.toFixed(0)}/100
         </span>
       )}
@@ -52,26 +52,26 @@ export function RiskBadge({
 }
 
 export function ActionBadge({ action }: { action: string }) {
-  let badgeColor = "bg-slate-800 text-slate-300 border-slate-700";
+  let badgeColor = "bg-[#F1F0ED] text-[#5D6266] border-[#D9D6CD]";
   let label = action;
 
   if (action === "ALLOW") {
-    badgeColor = "bg-emerald-900/40 text-emerald-300 border-emerald-800";
+    badgeColor = "bg-[#E8F4E8] text-[#24813A] border-[#24813A]/30";
     label = "ALLOW";
   } else if (action === "MONITOR") {
-    badgeColor = "bg-blue-900/40 text-blue-300 border-blue-800";
+    badgeColor = "bg-[#F1F0ED] text-[#17191B] border-[#D9D6CD]";
     label = "MONITOR";
   } else if (action === "STEP_UP_VERIFY") {
-    badgeColor = "bg-amber-900/50 text-amber-200 border-amber-700";
+    badgeColor = "bg-[#FFF5D6] text-[#E7A500] border-[#E7A500]/40";
     label = "STEP-UP VERIFY";
   } else if (action === "ESCALATE_INVESTIGATION") {
-    badgeColor = "bg-rose-900/60 text-rose-200 border-rose-700";
+    badgeColor = "bg-[#FCE5E3] text-[#D52222] border-[#D52222]/40";
     label = "ESCALATE INVESTIGATION";
   }
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-mono font-medium border ${badgeColor}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-[2px] text-[11px] font-mono font-bold border tracking-tight ${badgeColor}`}
     >
       {label}
     </span>
@@ -79,24 +79,24 @@ export function ActionBadge({ action }: { action: string }) {
 }
 
 export function EvidenceQualityBadge({ quality }: { quality: string }) {
-  let color = "bg-slate-800 text-slate-400 border-slate-700";
+  let color = "bg-[#F1F0ED] text-[#5D6266] border-[#D9D6CD]";
   if (quality === "HIGH") {
-    color = "bg-teal-950/60 text-teal-300 border-teal-800";
+    color = "bg-[#E8F4E8] text-[#24813A] border-[#24813A]/30";
   } else if (quality === "MODERATE") {
-    color = "bg-sky-950/60 text-sky-300 border-sky-800";
+    color = "bg-[#FFF5D6] text-[#E7A500] border-[#E7A500]/40";
   } else if (quality === "LOW") {
-    color = "bg-amber-950/60 text-amber-300 border-amber-800";
+    color = "bg-[#FFF5D6] text-[#E7A500] border-[#E7A500]/40";
   } else if (quality === "INSUFFICIENT") {
-    color = "bg-purple-950/60 text-purple-300 border-purple-800";
+    color = "bg-[#FCE5E3] text-[#D52222] border-[#D52222]/40";
   }
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono border ${color}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[11px] font-mono border ${color}`}
       title="Evidence Quality determines confidence in individual historical baseline"
     >
       <span className="opacity-70">Evidence:</span>
-      <span className="font-semibold">{quality}</span>
+      <span className="font-bold">{quality}</span>
     </span>
   );
 }

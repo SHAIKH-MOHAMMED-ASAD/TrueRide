@@ -8,13 +8,12 @@ import {
   CheckCircle,
   AlertTriangle,
   ArrowRight,
-  TrendingUp,
-  Cpu,
-  Eye,
   Sliders,
   CheckCheck,
   Camera,
   Award,
+  Eye,
+  Radio,
 } from "lucide-react";
 import { RiskBadge, ActionBadge } from "../common/RiskBadge";
 
@@ -31,8 +30,8 @@ export function OverviewView({
 }: OverviewViewProps) {
   if (!metrics) {
     return (
-      <div className="flex items-center justify-center py-20 text-slate-500 font-mono text-sm">
-        <Activity className="w-5 h-5 animate-spin mr-2 text-cyan-400" />
+      <div className="flex items-center justify-center py-20 text-[#5D6266] font-mono text-sm bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px]">
+        <Activity className="w-5 h-5 animate-spin mr-2 text-[#17191B]" />
         Loading TrueRide Intelligence Metrics...
       </div>
     );
@@ -54,61 +53,70 @@ export function OverviewView({
 
   return (
     <div className="space-y-6">
-      {/* Top Banner with Hackathon Value Prop */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-[#0a1428] via-[#0d1d3a] to-[#0a1428] border border-cyan-500/30 shadow-2xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800">
+      {/* A. Charcoal Hero Banner (SiteSync AI Reference Style) */}
+      <div className="p-6 bg-[#2F3130] text-white border-l-4 border-l-[#FFD900] border-t border-r border-b border-[#3F4241] rounded-[2px] shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          <div className="space-y-1.5 max-w-3xl">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono font-bold tracking-widest text-[#FFD900] uppercase">
+                TRUERIDE IDENTITY INTELLIGENCE
+              </span>
+              <span className="text-[#8B8D8C] text-xs font-mono">•</span>
+              <span className="text-[11px] font-mono text-[#D5D7D6]">
                 ACTIVE MONITORING SYSTEM
               </span>
-              <span className="text-xs text-slate-400 font-mono">
-                Continuous Behavioral Verification
-              </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Trust & Safety Intelligence Dashboard
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white uppercase">
+              Continuous Rider Identity Monitoring
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
-              Protecting riders and platforms against the rented account problem. TrueRide models individualized behavioral touch rhythm, detecting account sharing even on the original physical device and city.
+            <p className="text-xs sm:text-sm text-[#D5D7D6] leading-relaxed">
+              Detect suspicious account handoffs through behavioral intelligence, contextual risk scoring, and proportionate verification. Models individualized touch rhythm to prevent rented accounts.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              onClick={() => onNavigateTab("radar")}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-[2px] font-bold text-xs text-[#090D18] bg-[#36D5E8] hover:bg-[#25c0d3] transition cursor-pointer shadow-sm tracking-tight"
+            >
+              <Radio className="w-4 h-4 text-[#090D18]" />
+              <span>Fleet Radar (Live)</span>
+            </button>
             <button
               onClick={() => onNavigateTab("simulator")}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs text-slate-950 bg-gradient-to-r from-cyan-400 to-teal-400 hover:from-cyan-300 hover:to-teal-300 shadow-[0_0_15px_rgba(6,182,212,0.3)] cursor-pointer transition"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-[2px] font-bold text-xs text-[#17191B] bg-[#FFD900] hover:bg-[#e6c400] transition cursor-pointer shadow-sm tracking-tight"
             >
-              <Sliders className="w-4 h-4 text-slate-950" />
+              <Sliders className="w-4 h-4 text-[#17191B]" />
               <span>Launch Simulator</span>
             </button>
             <button
               onClick={() => onNavigateTab("cases")}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700 transition cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-[2px] font-mono text-xs text-[#FFFFFF] bg-[#404342] hover:bg-[#4D5150] border border-[#555857] transition cursor-pointer"
             >
               <span>Review Queue ({openCasesCount})</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 text-[#FFD900]" />
             </button>
           </div>
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
+      {/* B. Compact KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
         {/* KPI 1: Riders */}
         <div
           onClick={() => onNavigateTab("riders")}
-          className="p-4 rounded-xl bg-[#0c162c] border border-slate-800 hover:border-cyan-500/40 transition cursor-pointer"
+          className="p-4 bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] hover:border-[#17191B] transition cursor-pointer shadow-xs"
         >
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-medium">Riders Enrolled</span>
-            <Users className="w-4 h-4 text-cyan-400" />
+          <div className="flex items-center justify-between text-[#5D6266]">
+            <span className="text-[11px] font-bold uppercase tracking-wider font-mono">
+              Riders Enrolled
+            </span>
+            <Users className="w-4 h-4 text-[#5D6266]" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-white">
+          <div className="mt-2 text-2xl sm:text-3xl font-bold font-mono text-[#17191B]">
             {ridersCount}
           </div>
-          <span className="text-[10px] text-slate-500 font-mono">
+          <span className="text-[10px] text-[#8B8D8C] font-mono block mt-1">
             Fictional baselines active
           </span>
         </div>
@@ -116,50 +124,56 @@ export function OverviewView({
         {/* KPI 2: Sessions */}
         <div
           onClick={() => onNavigateTab("sessions")}
-          className="p-4 rounded-xl bg-[#0c162c] border border-slate-800 hover:border-cyan-500/40 transition cursor-pointer"
+          className="p-4 bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] hover:border-[#17191B] transition cursor-pointer shadow-xs"
         >
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-medium">Sessions Evaluated</span>
-            <Activity className="w-4 h-4 text-teal-400" />
+          <div className="flex items-center justify-between text-[#5D6266]">
+            <span className="text-[11px] font-bold uppercase tracking-wider font-mono">
+              Sessions Evaluated
+            </span>
+            <Activity className="w-4 h-4 text-[#5D6266]" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-white">
+          <div className="mt-2 text-2xl sm:text-3xl font-bold font-mono text-[#17191B]">
             {sessionsCount}
           </div>
-          <span className="text-[10px] text-slate-500 font-mono">
-            {lowRiskCount} low-risk allowed
+          <span className="text-[10px] text-[#24813A] font-mono block mt-1 font-semibold">
+            {lowRiskCount} verified low-risk
           </span>
         </div>
 
-        {/* KPI 3: High Risk Alerts */}
+        {/* KPI 3: High-Risk Sessions (Semantic Pale Red) */}
         <div
           onClick={() => onNavigateTab("cases")}
-          className="p-4 rounded-xl bg-[#0c162c] border border-slate-800 hover:border-rose-500/40 transition cursor-pointer"
+          className="p-4 bg-[#FCE5E3]/40 border border-[#D52222]/40 rounded-[2px] hover:border-[#D52222] transition cursor-pointer shadow-xs"
         >
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-medium">High Risk Sessions</span>
-            <ShieldAlert className="w-4 h-4 text-rose-400" />
+          <div className="flex items-center justify-between text-[#D52222]">
+            <span className="text-[11px] font-bold uppercase tracking-wider font-mono">
+              High Risk Sessions
+            </span>
+            <ShieldAlert className="w-4 h-4 text-[#D52222]" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-rose-400">
+          <div className="mt-2 text-2xl sm:text-3xl font-bold font-mono text-[#D52222]">
             {highRiskCount}
           </div>
-          <span className="text-[10px] text-rose-500 font-mono">
+          <span className="text-[10px] text-[#D52222] font-mono block mt-1 font-semibold">
             Requires step-up verify
           </span>
         </div>
 
-        {/* KPI 4: Open Investigations */}
+        {/* KPI 4: Open Investigations (Semantic Pale Amber) */}
         <div
           onClick={() => onNavigateTab("cases")}
-          className="p-4 rounded-xl bg-[#0c162c] border border-slate-800 hover:border-amber-500/40 transition cursor-pointer"
+          className="p-4 bg-[#FFF5D6]/50 border border-[#E7A500]/40 rounded-[2px] hover:border-[#E7A500] transition cursor-pointer shadow-xs"
         >
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-medium">Open Cases</span>
-            <AlertTriangle className="w-4 h-4 text-amber-400" />
+          <div className="flex items-center justify-between text-[#E7A500]">
+            <span className="text-[11px] font-bold uppercase tracking-wider font-mono">
+              Open Cases
+            </span>
+            <AlertTriangle className="w-4 h-4 text-[#E7A500]" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-amber-300">
+          <div className="mt-2 text-2xl sm:text-3xl font-bold font-mono text-[#E7A500]">
             {openCasesCount}
           </div>
-          <span className="text-[10px] text-slate-500 font-mono">
+          <span className="text-[10px] text-[#5D6266] font-mono block mt-1">
             Analyst review queue
           </span>
         </div>
@@ -167,55 +181,57 @@ export function OverviewView({
         {/* KPI 5: Pending Verifications */}
         <div
           onClick={() => onNavigateTab("verification")}
-          className="p-4 rounded-xl bg-[#0c162c] border border-slate-800 hover:border-cyan-500/40 transition cursor-pointer col-span-2 lg:col-span-1"
+          className="p-4 bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] hover:border-[#17191B] transition cursor-pointer shadow-xs col-span-2 lg:col-span-1"
         >
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-medium">Pending Verifications</span>
-            <Camera className="w-4 h-4 text-cyan-400" />
+          <div className="flex items-center justify-between text-[#5D6266]">
+            <span className="text-[11px] font-bold uppercase tracking-wider font-mono">
+              Pending Verification
+            </span>
+            <Camera className="w-4 h-4 text-[#5D6266]" />
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-cyan-300">
+          <div className="mt-2 text-2xl sm:text-3xl font-bold font-mono text-[#17191B]">
             {pendingVerificationsCount}
           </div>
-          <span className="text-[10px] text-slate-500 font-mono">
-            Step-up challenge checks
+          <span className="text-[10px] text-[#8B8D8C] font-mono block mt-1">
+            Biometric challenge checks
           </span>
         </div>
       </div>
 
-      {/* Middle Row: Risk Score Distribution & Accuracy Benchmark Snapshot */}
+      {/* C. Main Analytics Section: Multi-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Risk Distribution Chart */}
-        <div className="lg:col-span-7 p-5 rounded-2xl bg-[#0c162c] border border-slate-800 shadow-md">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        {/* Left: Risk Score Distribution */}
+        <div className="lg:col-span-7 bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] p-5 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#D9D6CD]">
             <div>
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+              <h2 className="text-xs font-bold text-[#17191B] uppercase tracking-wider font-mono">
                 Risk-Score Distribution
               </h2>
-              <p className="text-xs text-slate-400">
-                Breakdown of {sessionsCount} ingested sessions across risk bands
+              <p className="text-[11px] text-[#5D6266] mt-0.5">
+                Breakdown of {sessionsCount} ingested sessions across continuous risk bands
               </p>
             </div>
-            <span className="text-xs font-mono text-slate-400">
+            <span className="text-[11px] font-mono text-[#5D6266] bg-[#F1F0ED] px-2 py-0.5 rounded-[1px] border border-[#D9D6CD]">
               Low: {lowRiskCount} | Med: {mediumRiskCount} | High: {highRiskCount}
             </span>
           </div>
 
-          <div className="mt-5 space-y-4">
+          <div className="space-y-3.5 pt-1">
             {distribution.map((bucket: any, idx: number) => {
               const maxCount = Math.max(...distribution.map((d: any) => d.count), 1);
               const pct = Math.round((bucket.count / maxCount) * 100);
 
-              let barColor = "bg-cyan-500";
-              if (idx === 3) barColor = "bg-amber-400";
-              if (idx === 4) barColor = "bg-rose-500";
+              let barColor = "bg-[#24813A]";
+              if (idx === 3) barColor = "bg-[#E7A500]";
+              if (idx === 4) barColor = "bg-[#D52222]";
 
               return (
                 <div key={bucket.range} className="space-y-1">
                   <div className="flex justify-between text-xs font-mono">
-                    <span className="text-slate-300 font-medium">
+                    <span className="text-[#17191B] font-bold">
                       {bucket.range}
                     </span>
-                    <span className="text-slate-400">
+                    <span className="text-[#5D6266]">
                       {bucket.count} sessions (
                       {sessionsCount > 0
                         ? Math.round((bucket.count / sessionsCount) * 100)
@@ -223,10 +239,10 @@ export function OverviewView({
                       %)
                     </span>
                   </div>
-                  <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                  <div className="w-full h-2.5 bg-[#F1F0ED] rounded-[1px] overflow-hidden border border-[#D9D6CD]">
                     <div
-                      className={`h-full transition-all duration-700 ease-out rounded-full ${barColor}`}
-                      style={{ width: `${Math.max(bucket.count > 0 ? 4 : 0, pct)}%` }}
+                      className={`h-full transition-all duration-500 rounded-[1px] ${barColor}`}
+                      style={{ width: `${Math.max(bucket.count > 0 ? 3 : 0, pct)}%` }}
                     />
                   </div>
                 </div>
@@ -234,102 +250,102 @@ export function OverviewView({
             })}
           </div>
 
-          <div className="mt-5 pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 font-mono">
+          <div className="pt-3 border-t border-[#D9D6CD] flex flex-wrap items-center justify-between gap-3 text-[11px] text-[#5D6266] font-mono">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
+              <span className="w-2 h-2 rounded-none bg-[#24813A]" />
               0-29: Low (Allow)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+              <span className="w-2 h-2 rounded-none bg-[#E7A500]" />
               30-69: Medium (Monitor / Verify)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+              <span className="w-2 h-2 rounded-none bg-[#D52222]" />
               70-100: High (Escalate)
             </span>
           </div>
         </div>
 
-        {/* Model Benchmark Accuracy Card */}
-        <div className="lg:col-span-5 p-5 rounded-2xl bg-gradient-to-br from-[#0c162c] to-[#0e1b36] border border-slate-800 shadow-md flex flex-col justify-between">
+        {/* Right: Model Evaluation Benchmark Snapshot */}
+        <div className="lg:col-span-5 bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-[#D9D6CD]">
               <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-cyan-400" />
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                  Model Evaluation Snapshot
+                <Award className="w-4 h-4 text-[#17191B]" />
+                <h2 className="text-xs font-bold text-[#17191B] uppercase tracking-wider font-mono">
+                  Evaluation Snapshot
                 </h2>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded font-mono bg-emerald-950 text-emerald-300 border border-emerald-800">
+              <span className="text-[10px] px-2 py-0.5 rounded-[1px] font-mono font-bold bg-[#E8F4E8] text-[#24813A] border border-[#24813A]/30">
                 Validated Benchmark
               </span>
             </div>
 
-            <p className="text-xs text-slate-400 mt-3">
-              Measured on 15 held-out labelled test scenarios with independently assigned ground truth:
+            <p className="text-[11px] text-[#5D6266] mt-3">
+              Empirically computed from labelled test dataset with independently defined ground truth:
             </p>
 
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
-                <span className="text-[11px] text-slate-500 font-mono block">
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div className="p-3 rounded-[2px] bg-[#F1F0ED] border border-[#D9D6CD]">
+                <span className="text-[10px] text-[#5D6266] font-mono font-bold uppercase block">
                   Recall (Detection)
                 </span>
-                <span className="text-xl font-bold font-mono text-emerald-400">
+                <span className="text-xl font-bold font-mono text-[#24813A]">
                   {evaluationSummary.recall || 100}%
                 </span>
-                <span className="text-[10px] text-slate-500 block mt-0.5">
+                <span className="text-[10px] text-[#5D6266] block mt-0.5">
                   Catches handoffs
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
-                <span className="text-[11px] text-slate-500 font-mono block">
+              <div className="p-3 rounded-[2px] bg-[#F1F0ED] border border-[#D9D6CD]">
+                <span className="text-[10px] text-[#5D6266] font-mono font-bold uppercase block">
                   False Positive Rate
                 </span>
-                <span className="text-xl font-bold font-mono text-cyan-300">
+                <span className="text-xl font-bold font-mono text-[#17191B]">
                   {evaluationSummary.falsePositiveRate || 0}%
                 </span>
-                <span className="text-[10px] text-slate-500 block mt-0.5">
+                <span className="text-[10px] text-[#5D6266] block mt-0.5">
                   Allows routine upgrades
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
-                <span className="text-[11px] text-slate-500 font-mono block">
+              <div className="p-3 rounded-[2px] bg-[#F1F0ED] border border-[#D9D6CD]">
+                <span className="text-[10px] text-[#5D6266] font-mono font-bold uppercase block">
                   P95 Scoring Latency
                 </span>
-                <span className="text-xl font-bold font-mono text-white">
+                <span className="text-xl font-bold font-mono text-[#17191B]">
                   &lt; 5 ms
                 </span>
-                <span className="text-[10px] text-slate-500 block mt-0.5">
+                <span className="text-[10px] text-[#5D6266] block mt-0.5">
                   Target: &lt; 200 ms
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
-                <span className="text-[11px] text-slate-500 font-mono block">
+              <div className="p-3 rounded-[2px] bg-[#F1F0ED] border border-[#D9D6CD]">
+                <span className="text-[10px] text-[#5D6266] font-mono font-bold uppercase block">
                   Precision Score
                 </span>
-                <span className="text-xl font-bold font-mono text-teal-400">
+                <span className="text-xl font-bold font-mono text-[#24813A]">
                   {evaluationSummary.precision || 100}%
                 </span>
-                <span className="text-[10px] text-slate-500 block mt-0.5">
+                <span className="text-[10px] text-[#5D6266] block mt-0.5">
                   High signal fidelity
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-            <span className="text-[11px] text-slate-500">
-              Labelled test set: {evaluationSummary.totalEvaluated || 15} sessions
+          <div className="mt-4 pt-3 border-t border-[#D9D6CD] flex items-center justify-between text-xs">
+            <span className="text-[11px] text-[#8B8D8C] font-mono">
+              Labelled set: {evaluationSummary.totalEvaluated || 15} sessions
             </span>
             <button
               onClick={() => onNavigateTab("evaluation")}
-              className="text-xs font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+              className="text-xs font-mono font-bold text-[#17191B] hover:text-[#5D6266] flex items-center gap-1 cursor-pointer"
             >
-              <span>Inspect Full Confusion Matrix</span>
-              <ArrowRight className="w-3 h-3" />
+              <span>Inspect Confusion Matrix</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#FFD900]" />
             </button>
           </div>
         </div>
@@ -338,44 +354,44 @@ export function OverviewView({
       {/* Bottom Row: Recent Security Alerts & Recent Decisions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Recent Alerts Table */}
-        <div className="lg:col-span-7 p-5 rounded-2xl bg-[#0c162c] border border-slate-800 shadow-md">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="lg:col-span-7 bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-[#D9D6CD]">
             <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-rose-400" />
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+              <ShieldAlert className="w-4 h-4 text-[#D52222]" />
+              <h2 className="text-xs font-bold text-[#17191B] uppercase tracking-wider font-mono">
                 Recent Elevated Alerts
               </h2>
             </div>
             <button
               onClick={() => onNavigateTab("cases")}
-              className="text-xs font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+              className="text-xs font-mono font-bold text-[#17191B] hover:text-[#5D6266] flex items-center gap-1 cursor-pointer"
             >
-              <span>View All Cases</span>
-              <ArrowRight className="w-3 h-3" />
+              <span>View All Cases ({openCasesCount})</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#FFD900]" />
             </button>
           </div>
 
-          <div className="mt-3 divide-y divide-slate-800/60">
+          <div className="mt-2 divide-y divide-[#D9D6CD]">
             {recentAlerts.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-500">
+              <div className="py-8 text-center text-xs text-[#8B8D8C] font-mono">
                 No active elevated alerts on record.
               </div>
             ) : (
               recentAlerts.map((alert: any) => (
                 <div
                   key={alert.id}
-                  className="py-3 flex items-center justify-between gap-3 text-xs"
+                  className="py-3 flex items-center justify-between gap-3 text-xs hover:bg-[#F7F7F5] transition px-1"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-white truncate">
+                      <span className="font-bold text-[#17191B] truncate">
                         {alert.rider?.name || alert.riderId}
                       </span>
-                      <span className="font-mono text-[10px] text-slate-400">
+                      <span className="font-mono text-[11px] text-[#5D6266]">
                         ({alert.riderId})
                       </span>
-                      <span className="text-slate-500">•</span>
-                      <span className="text-slate-400 font-mono text-[11px] truncate">
+                      <span className="text-[#D9D6CD]">•</span>
+                      <span className="text-[#5D6266] font-mono text-[11px] truncate">
                         {alert.sessionEvent?.operatingZone}
                       </span>
                     </div>
@@ -386,7 +402,7 @@ export function OverviewView({
                         size="sm"
                       />
                       <ActionBadge action={alert.recommendedAction} />
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[10px] text-[#8B8D8C] font-mono">
                         {new Date(alert.createdAt).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -399,15 +415,15 @@ export function OverviewView({
                     {alert.case?.id ? (
                       <button
                         onClick={() => onOpenCase(alert.case.id)}
-                        className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-mono flex items-center gap-1 cursor-pointer border border-slate-700"
+                        className="px-2.5 py-1 rounded-[2px] bg-[#F1F0ED] hover:bg-[#D9D6CD] text-[#17191B] text-xs font-mono font-bold flex items-center gap-1 cursor-pointer border border-[#D9D6CD] transition"
                       >
-                        <Eye className="w-3 h-3" />
+                        <Eye className="w-3 h-3 text-[#17191B]" />
                         <span>Inspect</span>
                       </button>
                     ) : (
                       <button
                         onClick={() => onNavigateTab("sessions")}
-                        className="px-2.5 py-1 rounded bg-slate-900 text-slate-400 text-xs font-mono cursor-pointer"
+                        className="px-2.5 py-1 rounded-[2px] bg-[#F1F0ED] text-[#5D6266] text-xs font-mono cursor-pointer"
                       >
                         Detail
                       </button>
@@ -420,50 +436,50 @@ export function OverviewView({
         </div>
 
         {/* Recent Decisions / Audit Trail */}
-        <div className="lg:col-span-5 p-5 rounded-2xl bg-[#0c162c] border border-slate-800 shadow-md">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="lg:col-span-5 bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-[#D9D6CD]">
             <div className="flex items-center gap-2">
-              <CheckCheck className="w-4 h-4 text-emerald-400" />
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+              <CheckCheck className="w-4 h-4 text-[#24813A]" />
+              <h2 className="text-xs font-bold text-[#17191B] uppercase tracking-wider font-mono">
                 Recent Analyst Decisions
               </h2>
             </div>
             <button
               onClick={() => onNavigateTab("audit")}
-              className="text-xs font-mono text-cyan-400 hover:text-cyan-300 flex items-center gap-1 cursor-pointer"
+              className="text-xs font-mono font-bold text-[#17191B] hover:text-[#5D6266] flex items-center gap-1 cursor-pointer"
             >
-              <span>Audit Trail</span>
-              <ArrowRight className="w-3 h-3" />
+              <span>Full Audit Log</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#FFD900]" />
             </button>
           </div>
 
-          <div className="mt-3 space-y-3">
+          <div className="mt-3 space-y-2.5">
             {recentDecisions.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-500">
+              <div className="py-8 text-center text-xs text-[#8B8D8C] font-mono">
                 No recent analyst review decisions recorded.
               </div>
             ) : (
               recentDecisions.map((dec: any) => (
                 <div
                   key={dec.id}
-                  className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs"
+                  className="p-3 rounded-[2px] bg-[#F7F7F5] border border-[#D9D6CD] text-xs"
                 >
                   <div className="flex items-center justify-between font-mono text-[11px] mb-1">
-                    <span className="text-cyan-400 font-semibold">
+                    <span className="text-[#17191B] font-bold">
                       {dec.decision.replace(/_/g, " ")}
                     </span>
-                    <span className="text-slate-500">
+                    <span className="text-[#8B8D8C]">
                       {new Date(dec.timestamp).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
                     </span>
                   </div>
-                  <p className="text-slate-300 text-[11px] line-clamp-2">
+                  <p className="text-[#5D6266] text-[11px] line-clamp-2">
                     {dec.reason}
                   </p>
-                  <div className="mt-2 pt-1.5 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-500 font-mono">
-                    <span>By: {dec.reviewer}</span>
+                  <div className="mt-2 pt-1.5 border-t border-[#D9D6CD] flex items-center justify-between text-[10px] text-[#8B8D8C] font-mono">
+                    <span>Analyst: {dec.reviewer}</span>
                     <span>Case: {dec.case?.caseNumber}</span>
                   </div>
                 </div>

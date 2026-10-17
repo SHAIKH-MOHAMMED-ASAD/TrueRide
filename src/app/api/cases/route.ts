@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listSecurityCases } from "@/lib/services/cases";
-
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;

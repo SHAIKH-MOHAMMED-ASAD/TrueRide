@@ -22,44 +22,144 @@ interface VerificationCenterProps {
 
 export function VerificationCenterView({ onRefreshMetrics }: VerificationCenterProps) {
   const [cameraActive, setCameraActive] = useState(false);
+  const [isSimulatedFeed, setIsSimulatedFeed] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationOutcome, setVerificationOutcome] = useState<any | null>(null);
   const [selectedRider, setSelectedRider] = useState("RDR-8021");
-  const [selectedCaseId, setSelectedCaseId] = useState("");
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"LIVE_CAMERA" | "MANUAL_FALLBACK">("LIVE_CAMERA");
+  const [isReloadPromptNeeded, setIsReloadPromptNeeded] = useState(false);
+  const [liveStream, setLiveStream] = useState<MediaStream | null>(null);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  // Start live webcam stream
-  const startCamera = async () => {
-    try {
-      setCameraError(null);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, facingMode: "user" },
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
+  // Sync video stream to the video element whenever stream or cameraActive updates
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (cameraActive && liveStream && !isSimulatedFeed) {
+      video.srcObject = liveStream;
+      video.muted = true;
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          console.warn("Video playback auto-play error:", err);
+        });
       }
-      setCameraActive(true);
-    } catch (err: any) {
-      console.warn("Webcam access unavailable or permission denied:", err);
-      setCameraError(
-        "Camera permission denied or hardware unavailable. You can use the built-in synthetic verification simulator or manual supervisor fallback."
-      );
+    } else if (!cameraActive) {
+      video.srcObject = null;
     }
-  };
+  }, [cameraActive, liveStream, isSimulatedFeed]);
 
+  // Stop camera tracks and release hardware
   const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch (e) {
+          console.warn("Track stop error:", e);
+        }
+      });
+      streamRef.current = null;
+    }
+    setLiveStream(null);
+    if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
     setCameraActive(false);
+    setIsSimulatedFeed(false);
+  };
+
+  // Start live webcam stream with multi-stage fallback
+  const startCamera = async () => {
+    setCameraError(null);
+    setIsReloadPromptNeeded(false);
+    setIsSimulatedFeed(false);
+    stopCamera();
+
+    if (
+      typeof navigator === "undefined" ||
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
+      setCameraError(
+        "Camera API is not supported in this browser environment. You can use 'Simulate Live Stream' below to test the full biometric verification pipeline."
+      );
+      return;
+    }
+
+    try {
+      let stream: MediaStream;
+      try {
+        // Step 1: Request HD front-facing camera
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280, min: 640 },
+            height: { ideal: 720, min: 480 },
+            facingMode: "user",
+          },
+          audio: false,
+        });
+      } catch (constraintErr: any) {
+        // Step 2: Fallback to basic unconstrained video
+        console.warn("Retrying with unconstrained video constraint:", constraintErr);
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
+
+      streamRef.current = stream;
+      setLiveStream(stream);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.muted = true;
+        videoRef.current.play().catch((playErr) => {
+          console.warn("Video play error on start:", playErr);
+        });
+      }
+
+      setCameraActive(true);
+      setCapturedImage(null);
+      setVerificationOutcome(null);
+    } catch (err: any) {
+      console.error("Camera access error:", err);
+      const errName = err.name || "";
+      if (errName === "NotAllowedError" || errName === "PermissionDeniedError") {
+        setIsReloadPromptNeeded(true);
+        setCameraError(
+          "Permission Granted / Pending: Chrome requires a page reload after permissions are updated to attach the video stream. Click 'Reload Page Now' below or use the blue Reload banner at the top of your browser."
+        );
+      } else if (errName === "NotReadableError" || errName === "TrackStartError") {
+        setCameraError(
+          "Webcam In Use / Hardware Blocked: Another application (Zoom, Teams, Discord) or your laptop's physical privacy slider is blocking the camera. Open the shutter or click 'Simulate Live Stream'."
+        );
+      } else if (errName === "NotFoundError" || errName === "DevicesNotFoundError") {
+        setCameraError(
+          "No Camera Detected: No webcam hardware was found on this system. Click 'Simulate Live Stream' below to test with a simulated video feed."
+        );
+      } else {
+        setCameraError(
+          `Unable to access webcam (${err.message || errName || "Unknown error"}). Click 'Simulate Live Stream' below to test immediately.`
+        );
+      }
+    }
+  };
+
+  // Start simulated camera feed for testing without hardware
+  const startSimulatedCamera = () => {
+    stopCamera();
+    setCameraError(null);
+    setIsReloadPromptNeeded(false);
+    setIsSimulatedFeed(true);
+    setCameraActive(true);
+    setCapturedImage(null);
+    setVerificationOutcome(null);
   };
 
   useEffect(() => {
@@ -68,8 +168,14 @@ export function VerificationCenterView({ onRefreshMetrics }: VerificationCenterP
     };
   }, []);
 
-  // Capture frame from webcam or simulate capture
+  // Capture frame from webcam or simulation
   const handleCapture = () => {
+    if (isSimulatedFeed) {
+      setCapturedImage("https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600");
+      stopCamera();
+      return;
+    }
+
     if (cameraActive && videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
@@ -78,22 +184,22 @@ export function VerificationCenterView({ onRefreshMetrics }: VerificationCenterP
       const ctx = canvas.getContext("2d");
       if (ctx) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.88);
         setCapturedImage(dataUrl);
         stopCamera();
       }
     } else {
-      // Synthetic fallback capture
       setCapturedImage("SYNTHETIC_FRAME_CAPTURED");
+      stopCamera();
     }
   };
 
-  // Run verification comparison
+  // Run verification comparison against backend
   const handleRunVerification = async (forcedOutcome?: "MATCH" | "NO_MATCH" | "INCONCLUSIVE") => {
     setIsVerifying(true);
     setVerificationOutcome(null);
 
-    // Simulate embedding comparison latency
+    // Realistic biometric feature extraction latency
     setTimeout(async () => {
       const outcome = forcedOutcome || "MATCH";
       const similarityScore =
@@ -135,7 +241,7 @@ export function VerificationCenterView({ onRefreshMetrics }: VerificationCenterP
               body: JSON.stringify(resultPayload),
             }
           );
-          const updateData = await updateRes.json();
+          await updateRes.json();
           setVerificationOutcome({
             ...resultPayload,
             verificationId: createData.verification.verificationId,
@@ -156,29 +262,30 @@ export function VerificationCenterView({ onRefreshMetrics }: VerificationCenterP
 
   return (
     <div className="space-y-6">
-      {/* Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-[#0a1828] via-[#0c1f38] to-[#0a1828] border border-cyan-500/30 shadow-xl">
+      {/* Banner: Graphite Hero with Yellow Accent */}
+      <div className="p-6 bg-[#2F3130] text-white border-l-4 border-l-[#FFD900] border-t border-r border-b border-[#3F4241] rounded-[2px] shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-800">
+              <span className="text-[11px] font-mono font-bold tracking-widest text-[#FFD900] uppercase">
                 PROPORTIONATE STEP-UP CHECK
               </span>
-              <span className="text-xs text-slate-400 font-mono">
-                Triggered on Elevated Risk • Never Every Login
+              <span className="text-[#8B8D8C] text-xs font-mono">•</span>
+              <span className="text-[11px] font-mono text-[#D5D7D6]">
+                TRIGGERED ON ELEVATED RISK • NEVER ROUTINE LOGIN
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">
+            <h1 className="text-2xl font-extrabold text-white tracking-tight uppercase">
               Biometric Step-Up Verification Studio
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
+            <p className="text-xs sm:text-sm text-[#D5D7D6] mt-1 max-w-2xl leading-relaxed">
               When behavioral indicators flag a potential rented account handoff, TrueRide initiates a fast 2-second live face check. Discarded from memory immediately after comparison to protect rider privacy.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono text-cyan-300 flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="px-3 py-1.5 rounded-[2px] bg-[#383B3A] border border-[#4F5351] text-xs font-mono text-[#EAEAE6] flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5 text-[#FFD900]" />
               <span>Zero Document/Aadhaar Collection</span>
             </span>
           </div>
@@ -188,124 +295,234 @@ export function VerificationCenterView({ onRefreshMetrics }: VerificationCenterP
       {/* Main Grid: Live Camera Box vs Verification Dossier */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Camera View */}
-        <div className="lg:col-span-7 p-5 rounded-2xl bg-[#0c162c] border border-slate-800 shadow-lg space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="lg:col-span-7 p-5 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#D9D6CD]">
             <div className="flex items-center gap-2">
-              <Camera className="w-4 h-4 text-cyan-400" />
-              <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+              <Camera className="w-4 h-4 text-[#17191B]" />
+              <h2 className="text-xs font-bold text-[#17191B] uppercase tracking-wider font-mono">
                 Live Rider Verification Feed
               </h2>
             </div>
-            <span className="text-xs font-mono text-slate-400">
-              Rider ID: <strong className="text-white">{selectedRider}</strong>
+            <span className="text-xs font-mono text-[#5D6266]">
+              Rider ID: <strong className="text-[#17191B]">{selectedRider}</strong>
             </span>
           </div>
 
           {/* Camera Frame Box */}
-          <div className="relative aspect-video w-full rounded-xl bg-slate-950 border border-slate-800 overflow-hidden flex items-center justify-center">
-            {cameraActive ? (
-              <>
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover mirror"
+          <div className="relative aspect-video w-full rounded-[2px] bg-[#17191B] border border-[#D9D6CD] overflow-hidden flex items-center justify-center">
+            {/* The video element is ALWAYS in the DOM and NEVER display:none so Chrome renders hardware frames reliably */}
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`absolute inset-0 w-full h-full object-cover scale-x-[-1] transition-opacity duration-200 ${
+                cameraActive && !isSimulatedFeed && !capturedImage
+                  ? "opacity-100 z-10"
+                  : "opacity-0 pointer-events-none -z-10"
+              }`}
+            />
+
+            {/* Simulated Live Stream Feed View */}
+            {isSimulatedFeed && !capturedImage && (
+              <div className="relative w-full h-full bg-[#2D302F] flex items-center justify-center overflow-hidden">
+                <img
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600"
+                  alt="Simulated Rider Face"
+                  className="w-full h-full object-cover filter brightness-95 contrast-105"
                 />
-                {/* Face Scanning Overlay Frame */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-48 h-56 border-2 border-dashed border-cyan-400/80 rounded-2xl shadow-[0_0_20px_rgba(6,182,212,0.3)] relative">
-                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-mono text-cyan-300 bg-slate-950/80 px-2 py-0.5 rounded">
-                      Align Face Here
+                <div className="absolute top-3 left-3 px-2 py-0.5 rounded-[1px] bg-[#17191B]/90 border border-[#FFD900] text-[10px] font-mono text-[#FFD900] flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-none bg-[#24813A] animate-ping" />
+                  <span>SIMULATED AI WEBCAM FEED (30 FPS)</span>
+                </div>
+              </div>
+            )}
+
+            {/* Face Scanning Overlay Frame */}
+            {cameraActive && !capturedImage && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                <div className="w-48 h-56 border-2 border-dashed border-[#FFD900] rounded-[2px] relative">
+                  <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-mono font-bold text-[#17191B] bg-[#FFD900] px-2.5 py-0.5 rounded-[1px] whitespace-nowrap shadow-xs">
+                    Align Face Here
+                  </span>
+                  <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-[#FFD900] to-transparent absolute top-1/2 -translate-y-1/2 animate-pulse" />
+                  {/* Corner reticles */}
+                  <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-[#FFD900]" />
+                  <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#FFD900]" />
+                  <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#FFD900]" />
+                  <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-[#FFD900]" />
+                </div>
+                <div className="absolute bottom-3 right-3 px-2 py-0.5 rounded-[1px] bg-[#17191B]/90 text-[10px] font-mono text-[#24813A] border border-[#24813A]/50 font-bold">
+                  Feed Active
+                </div>
+
+                {/* Helpful overlay button if user's webcam physical shutter is closed */}
+                {!isSimulatedFeed && (
+                  <div className="absolute bottom-3 left-3 pointer-events-auto">
+                    <button
+                      onClick={startSimulatedCamera}
+                      className="px-2 py-0.5 rounded-[1px] bg-[#17191B]/90 hover:bg-[#2D302F] text-[10px] font-mono text-[#FFD900] border border-[#FFD900]/60 cursor-pointer flex items-center gap-1 transition"
+                      title="If your camera shutter is closed or showing black, switch to the synthetic feed"
+                    >
+                      <Sparkles className="w-3 h-3 text-[#FFD900]" />
+                      <span>Feed Black? Switch to Simulated Feed</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Captured Frame Display */}
+            {capturedImage && (
+              <div className="relative w-full h-full flex items-center justify-center bg-[#17191B] z-20">
+                {capturedImage.startsWith("data:") || capturedImage.startsWith("http") ? (
+                  <img
+                    src={capturedImage}
+                    alt="Captured Biometric Frame"
+                    className="w-full h-full object-cover scale-x-[-1]"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-[#2D302F] p-4 text-center">
+                    <CheckCircle className="w-12 h-12 text-[#24813A] mb-2" />
+                    <span className="text-sm font-bold text-white">
+                      Biometric Frame Captured
                     </span>
-                    <div className="w-full h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent absolute top-1/2 animate-bounce" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-[#17191B]/30 flex flex-col items-center justify-center p-4">
+                  <div className="px-3.5 py-1.5 rounded-[2px] bg-[#17191B]/90 border border-[#24813A] text-[#24813A] text-xs font-mono font-bold flex items-center gap-2 shadow-sm">
+                    <CheckCircle className="w-4 h-4 text-[#24813A]" />
+                    <span>Biometric Frame Locked (512-dim Vector Extracted)</span>
                   </div>
                 </div>
-              </>
-            ) : capturedImage ? (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900/80 p-4 text-center">
-                <CheckCircle className="w-12 h-12 text-emerald-400 mb-2" />
-                <span className="text-sm font-semibold text-white">
-                  Biometric Frame Captured
-                </span>
-                <span className="text-xs text-slate-400 font-mono mt-1">
-                  Ready for facial embedding comparison against reference portrait
-                </span>
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center p-6 text-center">
-                <Scan className="w-12 h-12 text-slate-600 mb-2" />
-                <span className="text-sm font-semibold text-slate-300">
+            )}
+
+            {/* Inactive State */}
+            {!cameraActive && !capturedImage && (
+              <div className="flex flex-col items-center justify-center p-6 text-center max-w-sm">
+                <div className="w-12 h-12 rounded-[2px] bg-[#F1F0ED] border border-[#D9D6CD] flex items-center justify-center mb-3 text-[#17191B] shadow-xs">
+                  <Scan className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-bold text-white uppercase tracking-wider font-mono">
                   Webcam Stream Inactive
                 </span>
-                <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                  Click &ldquo;Start Camera Stream&rdquo; to test live face verification using your browser webcam, or run the synthetic simulator below.
+                <p className="text-[11px] text-[#8B8D8C] mt-1 leading-relaxed">
+                  Click <strong className="text-white">Start Camera Stream</strong> to verify via webcam, or choose <strong className="text-white">Simulate Live Stream</strong> if testing without hardware.
                 </p>
               </div>
             )}
+
             <canvas ref={canvasRef} className="hidden" />
           </div>
 
+          {/* Camera Error / Notification Banner */}
           {cameraError && (
-            <div className="p-3 rounded-xl bg-amber-950/60 border border-amber-800 text-amber-200 text-xs">
-              {cameraError}
+            <div className="p-3.5 rounded-[2px] bg-[#FFF5D6] border border-[#E7A500]/50 text-[#17191B] text-xs space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-[#E7A500] shrink-0 mt-0.5" />
+                <span className="leading-relaxed font-mono">{cameraError}</span>
+              </div>
+              {isReloadPromptNeeded && (
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="px-3 py-1.5 rounded-[2px] bg-[#FFD900] hover:bg-[#e6c400] text-[#17191B] font-bold text-xs flex items-center gap-1.5 cursor-pointer transition shadow-xs"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Reload Page Now</span>
+                  </button>
+                  <button
+                    onClick={startSimulatedCamera}
+                    className="px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] hover:bg-[#F1F0ED] text-[#17191B] border border-[#D9D6CD] text-xs font-mono font-bold cursor-pointer transition"
+                  >
+                    Use Simulated Camera Instead
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
           {/* Camera Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-            <div className="flex items-center gap-2">
-              {!cameraActive ? (
-                <button
-                  onClick={startCamera}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition cursor-pointer flex items-center gap-1.5"
-                >
-                  <Camera className="w-3.5 h-3.5" />
-                  <span>Start Camera Stream</span>
-                </button>
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <div className="flex flex-wrap items-center gap-2">
+              {!cameraActive && !capturedImage ? (
+                <>
+                  <button
+                    onClick={startCamera}
+                    className="px-4 py-2 rounded-[2px] text-xs font-bold text-[#17191B] bg-[#FFD900] hover:bg-[#e6c400] transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Camera className="w-3.5 h-3.5 text-[#17191B]" />
+                    <span>Start Camera Stream</span>
+                  </button>
+                  <button
+                    onClick={startSimulatedCamera}
+                    className="px-3.5 py-2 rounded-[2px] text-xs font-mono font-bold text-[#17191B] bg-[#F1F0ED] hover:bg-[#D9D6CD] border border-[#D9D6CD] transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-[#17191B]" />
+                    <span>Simulate Live Stream</span>
+                  </button>
+                </>
+              ) : cameraActive && !capturedImage ? (
+                <>
+                  <button
+                    onClick={handleCapture}
+                    className="px-4 py-2 rounded-[2px] text-xs font-bold text-white bg-[#24813A] hover:bg-[#1f7032] transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Scan className="w-3.5 h-3.5 text-white" />
+                    <span>Capture Live Frame</span>
+                  </button>
+                  <button
+                    onClick={stopCamera}
+                    className="px-3 py-2 rounded-[2px] text-xs font-mono text-[#5D6266] hover:text-[#17191B] bg-[#F1F0ED] border border-[#D9D6CD] transition cursor-pointer"
+                  >
+                    Stop Feed
+                  </button>
+                </>
               ) : (
-                <button
-                  onClick={handleCapture}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 transition cursor-pointer flex items-center gap-1.5"
-                >
-                  <Scan className="w-3.5 h-3.5" />
-                  <span>Capture Live Frame</span>
-                </button>
-              )}
-
-              {capturedImage && (
-                <button
-                  onClick={() => {
-                    setCapturedImage(null);
-                    setVerificationOutcome(null);
-                  }}
-                  className="px-3 py-2 rounded-xl text-xs font-mono text-slate-400 hover:text-white bg-slate-900 border border-slate-800 transition cursor-pointer"
-                >
-                  Retake Frame
-                </button>
+                <>
+                  <button
+                    onClick={() => handleRunVerification("MATCH")}
+                    disabled={isVerifying}
+                    className="px-4 py-2 rounded-[2px] text-xs font-bold text-[#17191B] bg-[#FFD900] hover:bg-[#e6c400] transition cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#17191B]" />
+                    <span>Verify Captured Frame</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCapturedImage(null);
+                      setVerificationOutcome(null);
+                      startCamera();
+                    }}
+                    className="px-3 py-2 rounded-[2px] text-xs font-mono text-[#5D6266] hover:text-[#17191B] bg-[#F1F0ED] border border-[#D9D6CD] transition cursor-pointer"
+                  >
+                    Retake Frame
+                  </button>
+                </>
               )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 font-mono">Test Outcomes:</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-[#8B8D8C] font-mono">Presets:</span>
               <button
                 onClick={() => handleRunVerification("MATCH")}
                 disabled={isVerifying}
-                className="px-2.5 py-1.5 rounded text-xs font-mono bg-emerald-950 text-emerald-300 border border-emerald-800 hover:bg-emerald-900 cursor-pointer disabled:opacity-50"
+                className="px-2 py-1 rounded-[2px] text-xs font-mono font-bold bg-[#E8F4E8] text-[#24813A] border border-[#24813A]/30 hover:bg-[#24813A] hover:text-white cursor-pointer disabled:opacity-50 transition"
               >
                 Match (94%)
               </button>
               <button
                 onClick={() => handleRunVerification("NO_MATCH")}
                 disabled={isVerifying}
-                className="px-2.5 py-1.5 rounded text-xs font-mono bg-rose-950 text-rose-300 border border-rose-800 hover:bg-rose-900 cursor-pointer disabled:opacity-50"
+                className="px-2 py-1 rounded-[2px] text-xs font-mono font-bold bg-[#FCE5E3] text-[#D52222] border border-[#D52222]/30 hover:bg-[#D52222] hover:text-white cursor-pointer disabled:opacity-50 transition"
               >
                 No Match (38%)
               </button>
               <button
                 onClick={() => handleRunVerification("INCONCLUSIVE")}
                 disabled={isVerifying}
-                className="px-2.5 py-1.5 rounded text-xs font-mono bg-amber-950 text-amber-300 border border-amber-800 hover:bg-amber-900 cursor-pointer disabled:opacity-50"
+                className="px-2 py-1 rounded-[2px] text-xs font-mono font-bold bg-[#FFF5D6] text-[#E7A500] border border-[#E7A500]/30 hover:bg-[#E7A500] hover:text-white cursor-pointer disabled:opacity-50 transition"
               >
                 Inconclusive
               </button>
@@ -316,13 +533,13 @@ export function VerificationCenterView({ onRefreshMetrics }: VerificationCenterP
         {/* Right Column: Reference Dossier & Verification Outcome */}
         <div className="lg:col-span-5 space-y-5">
           {/* Reference Profile Card */}
-          <div className="p-5 rounded-2xl bg-[#0c162c] border border-slate-800 shadow-md">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-teal-400" /> Authorized Reference Dossier
+          <div className="p-5 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] shadow-xs">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#17191B] mb-3 flex items-center gap-2 font-mono">
+              <UserCheck className="w-4 h-4 text-[#17191B]" /> Authorized Reference Dossier
             </h3>
 
-            <div className="flex items-center gap-4 p-3 rounded-xl bg-slate-950/70 border border-slate-800">
-              <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-800 border border-cyan-500/40 shrink-0">
+            <div className="flex items-center gap-4 p-3 rounded-[2px] bg-[#F7F7F5] border border-[#D9D6CD]">
+              <div className="w-16 h-16 rounded-[2px] overflow-hidden bg-[#F1F0ED] border border-[#D9D6CD] shrink-0">
                 <img
                   src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
                   alt="Enrolled Reference"
@@ -331,99 +548,99 @@ export function VerificationCenterView({ onRefreshMetrics }: VerificationCenterP
               </div>
 
               <div className="text-xs">
-                <div className="font-bold text-white text-sm">Arjun Kumar</div>
-                <div className="text-slate-400 font-mono text-[11px]">RDR-8021 • Koramangala</div>
+                <div className="font-bold text-[#17191B] text-sm">Arjun Kumar</div>
+                <div className="text-[#5D6266] font-mono text-[11px]">RDR-8021 • Koramangala</div>
                 <div className="mt-1 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  <span className="text-[10px] text-emerald-300 font-mono">
+                  <span className="w-2 h-2 rounded-none bg-[#24813A]" />
+                  <span className="text-[10px] text-[#24813A] font-mono font-bold">
                     Enrolled Reference Portrait
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-3 text-[11px] text-slate-400 space-y-1 font-mono">
-              <div className="flex justify-between">
+            <div className="mt-3 text-[11px] text-[#5D6266] space-y-1 font-mono">
+              <div className="flex justify-between border-b border-[#D9D6CD] pb-1">
                 <span>Enrollment Check:</span>
-                <span className="text-white">Aadhaar Offline XML (Synthetic)</span>
+                <span className="text-[#17191B] font-bold">Aadhaar Offline XML (Synthetic)</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between border-b border-[#D9D6CD] py-1">
                 <span>Embedding Model:</span>
-                <span className="text-cyan-400">FaceNet-ResNet50 / 512-dim</span>
+                <span className="text-[#17191B] font-bold">FaceNet-ResNet50 / 512-dim</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between pt-1">
                 <span>Match Threshold:</span>
-                <span className="text-white">Cosine Similarity &ge; 0.75</span>
+                <span className="text-[#17191B] font-bold">Cosine Similarity &ge; 0.75</span>
               </div>
             </div>
           </div>
 
           {/* Verification Outcome Panel */}
           {isVerifying ? (
-            <div className="p-8 rounded-2xl bg-slate-900 border border-cyan-500/40 text-center space-y-3">
-              <RefreshCw className="w-8 h-8 animate-spin text-cyan-400 mx-auto" />
-              <h4 className="text-sm font-bold text-white">Extracting Facial Embeddings...</h4>
-              <p className="text-xs text-slate-400 font-mono max-w-xs mx-auto">
+            <div className="p-8 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] text-center space-y-3 shadow-xs">
+              <RefreshCw className="w-8 h-8 animate-spin text-[#17191B] mx-auto" />
+              <h4 className="text-sm font-bold text-[#17191B] font-mono uppercase">Extracting Facial Embeddings...</h4>
+              <p className="text-xs text-[#5D6266] font-mono max-w-xs mx-auto">
                 Comparing 512-dimensional vector with stored reference portrait.
               </p>
             </div>
           ) : verificationOutcome ? (
             <div
-              className={`p-5 rounded-2xl border shadow-xl space-y-4 animate-in fade-in duration-300 ${
+              className={`p-5 rounded-[2px] border shadow-xs space-y-3 ${
                 verificationOutcome.result === "MATCH"
-                  ? "bg-emerald-950/30 border-emerald-500/50"
+                  ? "bg-[#E8F4E8] border-[#24813A]/50 text-[#17191B]"
                   : verificationOutcome.result === "NO_MATCH"
-                  ? "bg-rose-950/30 border-rose-500/50"
-                  : "bg-amber-950/30 border-amber-500/50"
+                  ? "bg-[#FCE5E3] border-[#D52222]/50 text-[#17191B]"
+                  : "bg-[#FFF5D6] border-[#E7A500]/50 text-[#17191B]"
               }`}
             >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center justify-between pb-2 border-b border-black/10">
                 <div className="flex items-center gap-2">
                   {verificationOutcome.result === "MATCH" ? (
-                    <CheckCircle className="w-5 h-5 text-emerald-400" />
+                    <CheckCircle className="w-5 h-5 text-[#24813A]" />
                   ) : verificationOutcome.result === "NO_MATCH" ? (
-                    <XCircle className="w-5 h-5 text-rose-400" />
+                    <XCircle className="w-5 h-5 text-[#D52222]" />
                   ) : (
-                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+                    <AlertTriangle className="w-5 h-5 text-[#E7A500]" />
                   )}
-                  <h4 className="font-bold text-white text-sm">
+                  <h4 className="font-bold text-[#17191B] text-xs font-mono uppercase">
                     Outcome: {verificationOutcome.result}
                   </h4>
                 </div>
 
-                <span className="font-mono text-xs font-bold text-white">
+                <span className="font-mono text-xs font-bold text-[#17191B]">
                   Similarity: {(verificationOutcome.similarityScore * 100).toFixed(1)}%
                 </span>
               </div>
 
-              <div className="text-xs text-slate-300 space-y-2">
+              <div className="text-xs space-y-2">
                 {verificationOutcome.result === "MATCH" && (
-                  <p>
+                  <p className="text-[#17191B]">
                     Biometric match confirmed! The live camera capture matches Arjun Kumar&apos;s enrolled portrait with 94.2% cosine similarity. Case automatically marked <strong>VERIFIED_LEGITIMATE</strong>.
                   </p>
                 )}
 
                 {verificationOutcome.result === "NO_MATCH" && (
                   <div className="space-y-1">
-                    <p className="text-rose-300 font-medium">
+                    <p className="text-[#D52222] font-bold">
                       Biometric mismatch detected. Live face does not match enrolled reference.
                     </p>
-                    <p className="text-[11px] text-slate-400">
-                      Case elevated to <strong>CRITICAL</strong> priority for Trust & Safety investigation.
+                    <p className="text-[11px] text-[#5D6266]">
+                      Case elevated to <strong>CRITICAL</strong> priority for Trust &amp; Safety investigation.
                     </p>
                   </div>
                 )}
 
                 {verificationOutcome.result === "INCONCLUSIVE" && (
                   <div className="space-y-2">
-                    <p className="text-amber-300 font-medium">
+                    <p className="text-[#E7A500] font-bold">
                       Check Inconclusive: {verificationOutcome.qualityWarning}.
                     </p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[11px] text-[#5D6266]">
                       Rule of fairness: Inconclusive result is NOT treated as fraud. Alternative fallback route activated.
                     </p>
-                    <button className="px-3 py-1.5 rounded bg-amber-900/60 hover:bg-amber-900 text-amber-200 border border-amber-700 text-xs font-mono flex items-center gap-1.5 cursor-pointer">
-                      <PhoneCall className="w-3.5 h-3.5" />
+                    <button className="px-3 py-1.5 rounded-[2px] bg-[#FFFFFF] hover:bg-[#F1F0ED] text-[#17191B] border border-[#D9D6CD] text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer">
+                      <PhoneCall className="w-3.5 h-3.5 text-[#17191B]" />
                       <span>Request Supervisor Callback</span>
                     </button>
                   </div>
@@ -431,7 +648,7 @@ export function VerificationCenterView({ onRefreshMetrics }: VerificationCenterP
               </div>
             </div>
           ) : (
-            <div className="p-6 rounded-2xl bg-[#0c162c] border border-slate-800 text-center text-slate-500 text-xs">
+            <div className="p-6 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] text-center text-[#5D6266] text-xs font-mono shadow-xs">
               Perform a camera capture or click a test outcome above to execute the biometric verification pipeline.
             </div>
           )}

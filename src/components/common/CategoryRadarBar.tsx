@@ -85,49 +85,62 @@ export function CategoryRadarBar({
   ];
 
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-3">
       {categories.map((cat) => {
         const isHigh = cat.subscore >= 70;
         const isMed = cat.subscore >= 35 && cat.subscore < 70;
 
-        let barColor = "bg-cyan-500";
-        let textColor = "text-cyan-400";
+        let barColor = "bg-[#24813A]";
+        let textColor = "text-[#24813A]";
+        let bgTag = "bg-[#E8F4E8]";
+
         if (isHigh) {
-          barColor = "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]";
-          textColor = "text-rose-400";
+          barColor = "bg-[#D52222]";
+          textColor = "text-[#D52222]";
+          bgTag = "bg-[#FCE5E3]";
         } else if (isMed) {
-          barColor = "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]";
-          textColor = "text-amber-300";
+          barColor = "bg-[#E7A500]";
+          textColor = "text-[#E7A500]";
+          bgTag = "bg-[#FFF5D6]";
         }
 
         return (
-          <div key={cat.key} className="text-xs">
-            <div className="flex items-center justify-between mb-1">
+          <div
+            key={cat.key}
+            className="p-3 bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] transition hover:border-[#8B8D8C]"
+          >
+            <div className="flex items-center justify-between text-xs mb-1.5">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-slate-200">{cat.label}</span>
-                <span className="font-mono text-[10px] text-slate-500">
-                  ({Math.round(cat.weight * 100)}% Weight)
+                <span className="font-bold text-[#17191B] tracking-tight">{cat.label}</span>
+                <span className="text-[10px] text-[#5D6266] font-mono">
+                  Weight: {(cat.weight * 100).toFixed(0)}%
                 </span>
               </div>
+
               <div className="flex items-center gap-2 font-mono">
-                <span className={`font-semibold ${textColor}`}>
-                  {cat.subscore.toFixed(0)}/100
+                <span className={`px-1.5 py-0.2 rounded-[1px] text-[11px] font-bold ${textColor} ${bgTag}`}>
+                  Score: {cat.subscore.toFixed(0)}/100
                 </span>
-                <span className="text-slate-400 text-[11px]">
-                  (+{cat.contrib.toFixed(1)} pts)
+                <span className="text-[11px] text-[#5D6266] pl-1.5 border-l border-[#D9D6CD]">
+                  Contrib: +{cat.contrib.toFixed(1)} pts
                 </span>
               </div>
             </div>
 
-            <div className="w-full h-2 bg-slate-950/80 rounded-full overflow-hidden border border-slate-800">
+            {/* Industrial Square Progress Bar */}
+            <div className="w-full h-2 bg-[#F1F0ED] rounded-[1px] overflow-hidden border border-[#D9D6CD]/60 relative">
               <div
-                className={`h-full transition-all duration-500 ease-out rounded-full ${barColor}`}
-                style={{ width: `${Math.max(2, Math.min(100, cat.subscore))}%` }}
+                className={`h-full ${barColor} transition-all duration-300 rounded-[1px]`}
+                style={{ width: `${Math.min(100, Math.max(0, cat.subscore))}%` }}
               />
             </div>
-            <p className="text-[10px] text-slate-500 mt-0.5 truncate">
-              {cat.description}
-            </p>
+
+            <div className="mt-1 text-[11px] text-[#5D6266] flex items-center justify-between">
+              <span>{cat.description}</span>
+              <span className="font-mono text-[10px] text-[#8B8D8C]">
+                {isHigh ? "Elevated Risk Signal" : isMed ? "Moderate Divergence" : "Normal Baseline"}
+              </span>
+            </div>
           </div>
         );
       })}

@@ -14,7 +14,6 @@ import {
   Send,
   Smartphone,
   MapPin,
-  Sparkles,
 } from "lucide-react";
 import { RiskBadge, ActionBadge, EvidenceQualityBadge } from "../common/RiskBadge";
 import { CategoryRadarBar } from "../common/CategoryRadarBar";
@@ -101,8 +100,8 @@ export function CaseDetailModal({
 
   if (!caseData && loading) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-        <div className="p-6 rounded-2xl bg-[#0c162c] text-slate-300 font-mono text-sm">
+      <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div className="p-6 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] text-[#17191B] font-mono text-sm shadow-xl">
           Loading investigation evidence dossier...
         </div>
       </div>
@@ -117,24 +116,24 @@ export function CaseDetailModal({
   const baseline = rider?.baselines?.[0];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-      <div className="relative w-full max-w-5xl bg-[#0c162c] border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-950/60">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+      <div className="relative w-full max-w-5xl bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col font-sans">
+        {/* Header: Graphite Background with Yellow Accents */}
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#3F4241] bg-[#2F3130] text-white">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-rose-950 border border-rose-800">
-              <ShieldAlert className="w-5 h-5 text-rose-400" />
+            <div className="w-8 h-8 rounded-[2px] bg-[#D52222] flex items-center justify-center text-white font-bold">
+              <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white font-mono">
+                <h2 className="text-base font-bold font-mono text-white tracking-tight">
                   {caseData.caseNumber}
                 </h2>
-                <span className="text-xs px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-300">
-                  Status: {caseData.status}
+                <span className="text-[10px] px-2 py-0.5 rounded-[1px] font-mono font-bold bg-[#FFD900] text-[#17191B]">
+                  STATUS: {caseData.status}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#D5D7D6] mt-0.5">
                 Rider: {rider?.name} ({caseData.riderId}) • Session: {session?.sessionId}
               </p>
             </div>
@@ -142,20 +141,20 @@ export function CaseDetailModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            className="p-1.5 rounded-[2px] text-[#D5D7D6] hover:text-white hover:bg-[#3F4241] transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Scrollable Body */}
-        <div className="p-5 overflow-y-auto space-y-6 flex-1">
+        <div className="p-5 overflow-y-auto space-y-5 flex-1 bg-[#F7F7F5]">
           {message && (
             <div
-              className={`p-3 rounded-xl text-xs font-mono border ${
+              className={`p-3 rounded-[2px] text-xs font-mono border ${
                 message.type === "success"
-                  ? "bg-emerald-950/70 border-emerald-800 text-emerald-300"
-                  : "bg-rose-950/70 border-rose-800 text-rose-300"
+                  ? "bg-[#E8F4E8] border-[#24813A]/40 text-[#24813A]"
+                  : "bg-[#FCE5E3] border-[#D52222]/40 text-[#D52222]"
               }`}
             >
               {message.text}
@@ -163,7 +162,7 @@ export function CaseDetailModal({
           )}
 
           {/* Assessment Summary Strip */}
-          <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="p-4 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs">
             <div className="flex items-center gap-3">
               <RiskBadge
                 score={assessment?.overallScore}
@@ -173,16 +172,16 @@ export function CaseDetailModal({
               <ActionBadge action={assessment?.recommendedAction} />
             </div>
 
-            <div className="flex items-center gap-4 text-slate-400 font-mono text-[11px]">
+            <div className="flex items-center gap-4 text-[#5D6266] font-mono text-[11px]">
               <EvidenceQualityBadge quality={assessment?.evidenceQuality || "HIGH"} />
               <span>
                 Confidence:{" "}
-                <strong className="text-white">
+                <strong className="text-[#17191B]">
                   {assessment?.confidenceScore?.toFixed(0)}%
                 </strong>
               </span>
               <span>
-                Engine: <strong className="text-white">{assessment?.scoringVersion}</strong>
+                Engine: <strong className="text-[#17191B]">{assessment?.scoringVersion}</strong>
               </span>
             </div>
           </div>
@@ -190,80 +189,80 @@ export function CaseDetailModal({
           {/* Grid: Session Telemetry vs Baseline Comparison */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             {/* Current Session Telemetry */}
-            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
-              <h3 className="font-semibold text-slate-200 uppercase tracking-wider text-[11px] flex items-center gap-1.5 pb-2 border-b border-slate-800">
-                <Smartphone className="w-3.5 h-3.5 text-cyan-400" /> Current Session Telemetry
+            <div className="p-4 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] space-y-2 shadow-xs">
+              <h3 className="font-bold text-[#17191B] uppercase tracking-wider text-[11px] font-mono flex items-center gap-1.5 pb-2 border-b border-[#D9D6CD]">
+                <Smartphone className="w-3.5 h-3.5 text-[#17191B]" /> Current Session Telemetry
               </h3>
               <div className="grid grid-cols-2 gap-2 font-mono text-[11px]">
                 <div>
-                  <span className="text-slate-500 block text-[10px]">Device ID:</span>
-                  <span className="text-white truncate block">{session?.deviceId}</span>
+                  <span className="text-[#8B8D8C] block text-[10px]">Device ID:</span>
+                  <span className="text-[#17191B] font-bold truncate block">{session?.deviceId}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[10px]">Operating Zone:</span>
-                  <span className="text-white">{session?.operatingZone}, {session?.city}</span>
+                  <span className="text-[#8B8D8C] block text-[10px]">Operating Zone:</span>
+                  <span className="text-[#17191B]">{session?.operatingZone}, {session?.city}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[10px]">Interaction Cadence:</span>
-                  <span className="text-amber-300 font-bold">
+                  <span className="text-[#8B8D8C] block text-[10px]">Interaction Cadence:</span>
+                  <span className="text-[#D52222] font-bold">
                     {session?.avgIntervalSec ? `${session.avgIntervalSec.toFixed(1)}s avg` : "N/A"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[10px]">Acceptance Rate:</span>
-                  <span className="text-white">
+                  <span className="text-[#8B8D8C] block text-[10px]">Acceptance Rate:</span>
+                  <span className="text-[#17191B]">
                     {session?.acceptanceRate ? `${Math.round(session.acceptanceRate * 100)}%` : "N/A"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[10px]">Session Pattern:</span>
-                  <span className="text-cyan-300">{session?.interactionPattern || "NORMAL"}</span>
+                  <span className="text-[#8B8D8C] block text-[10px]">Session Pattern:</span>
+                  <span className="text-[#17191B] font-semibold">{session?.interactionPattern || "NORMAL"}</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[10px]">Termination / Relogin:</span>
-                  <span className="text-rose-300 font-semibold">{session?.sessionTerminationType || "NORMAL"}</span>
+                  <span className="text-[#8B8D8C] block text-[10px]">Termination / Relogin:</span>
+                  <span className="text-[#D52222] font-bold">{session?.sessionTerminationType || "NORMAL"}</span>
                 </div>
               </div>
             </div>
 
             {/* Rider Historical Baseline */}
-            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
-              <h3 className="font-semibold text-slate-200 uppercase tracking-wider text-[11px] flex items-center gap-1.5 pb-2 border-b border-slate-800">
-                <User className="w-3.5 h-3.5 text-teal-400" /> Individual Historical Baseline
+            <div className="p-4 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] space-y-2 shadow-xs">
+              <h3 className="font-bold text-[#17191B] uppercase tracking-wider text-[11px] font-mono flex items-center gap-1.5 pb-2 border-b border-[#D9D6CD]">
+                <User className="w-3.5 h-3.5 text-[#17191B]" /> Individual Historical Baseline
               </h3>
               <div className="grid grid-cols-2 gap-2 font-mono text-[11px]">
                 <div>
-                  <span className="text-slate-500 block text-[10px]">Known Device Registry:</span>
-                  <span className="text-white truncate block">
+                  <span className="text-[#8B8D8C] block text-[10px]">Known Device Registry:</span>
+                  <span className="text-[#17191B] truncate block">
                     {baseline?.knownDevices || "Enrolled phone"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[10px]">Primary Zones:</span>
-                  <span className="text-white truncate block">
+                  <span className="text-[#8B8D8C] block text-[10px]">Primary Zones:</span>
+                  <span className="text-[#17191B] truncate block">
                     {baseline?.primaryZones || "Assigned zone"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[10px]">Characteristic Interval:</span>
-                  <span className="text-emerald-400 font-bold">
+                  <span className="text-[#8B8D8C] block text-[10px]">Characteristic Interval:</span>
+                  <span className="text-[#24813A] font-bold">
                     {baseline?.avgInteractionInterval?.toFixed(1) || 14.5}s (±
                     {baseline?.stdInteractionInterval?.toFixed(1) || 3.0}s)
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[10px]">Typical Acceptance:</span>
-                  <span className="text-white">
+                  <span className="text-[#8B8D8C] block text-[10px]">Typical Acceptance:</span>
+                  <span className="text-[#17191B]">
                     {baseline ? `${Math.round(baseline.typicalAcceptanceRate * 100)}%` : "90%"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[10px]">Supporting Sessions:</span>
-                  <span className="text-teal-300">{baseline?.supportingSessions || 40} sessions</span>
+                  <span className="text-[#8B8D8C] block text-[10px]">Supporting Sessions:</span>
+                  <span className="text-[#17191B]">{baseline?.supportingSessions || 40} sessions</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block text-[10px]">Observation Window:</span>
-                  <span className="text-slate-300">{baseline?.observationWindow || "Last 30 Days"}</span>
+                  <span className="text-[#8B8D8C] block text-[10px]">Observation Window:</span>
+                  <span className="text-[#17191B]">{baseline?.observationWindow || "Last 30 Days"}</span>
                 </div>
               </div>
             </div>
@@ -271,8 +270,8 @@ export function CaseDetailModal({
 
           {/* 5 Core Signal Categories Breakdown */}
           {assessment && (
-            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-              <h3 className="font-semibold text-slate-300 uppercase tracking-wider text-[11px] mb-3">
+            <div className="p-4 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] shadow-xs">
+              <h3 className="font-bold text-[#17191B] uppercase tracking-wider text-[11px] font-mono mb-3">
                 Five Core Category Subscores & Weighted Contributions
               </h3>
               <CategoryRadarBar
@@ -289,46 +288,46 @@ export function CaseDetailModal({
 
           {/* Triggered Signals List */}
           <div>
-            <h3 className="font-semibold text-slate-300 uppercase tracking-wider text-[11px] mb-2">
+            <h3 className="font-bold text-[#17191B] uppercase tracking-wider text-[11px] font-mono mb-2">
               Observable Signals & Scoring Explanations ({assessment?.signals?.length || 0})
             </h3>
             <div className="space-y-2">
               {assessment?.signals?.map((sig: any) => (
                 <div
                   key={sig.id}
-                  className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-xs"
+                  className="p-3 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] text-xs shadow-xs"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-200">{sig.name}</span>
-                        <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400">
+                        <span className="font-bold text-[#17191B]">{sig.name}</span>
+                        <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-[1px] bg-[#F1F0ED] text-[#5D6266] border border-[#D9D6CD]">
                           {sig.signalCode}
                         </span>
                       </div>
-                      <p className="text-slate-400 text-[11px] mt-1">{sig.explanation}</p>
+                      <p className="text-[#5D6266] text-[11px] mt-1">{sig.explanation}</p>
                     </div>
                     <span
-                      className={`font-mono font-bold text-xs shrink-0 ${
+                      className={`font-mono font-bold text-xs shrink-0 px-2 py-0.5 rounded-[1px] border ${
                         sig.subscore >= 70
-                          ? "text-rose-400"
+                          ? "bg-[#FCE5E3] text-[#D52222] border-[#D52222]/30"
                           : sig.subscore >= 35
-                          ? "text-amber-300"
-                          : "text-cyan-400"
+                          ? "bg-[#FFF5D6] text-[#E7A500] border-[#E7A500]/30"
+                          : "bg-[#E8F4E8] text-[#24813A] border-[#24813A]/30"
                       }`}
                     >
                       {sig.subscore.toFixed(0)}/100
                     </span>
                   </div>
 
-                  <div className="mt-2 pt-2 border-t border-slate-800/60 grid grid-cols-2 gap-2 text-[11px] font-mono">
+                  <div className="mt-2 pt-2 border-t border-[#D9D6CD] grid grid-cols-2 gap-2 text-[11px] font-mono">
                     <div>
-                      <span className="text-slate-500 block text-[10px]">Observed Value:</span>
-                      <span className="text-amber-200">{sig.observedValue}</span>
+                      <span className="text-[#8B8D8C] block text-[10px]">Observed Value:</span>
+                      <span className="text-[#D52222] font-semibold">{sig.observedValue}</span>
                     </div>
                     <div>
-                      <span className="text-slate-500 block text-[10px]">Expected Baseline:</span>
-                      <span className="text-slate-300">{sig.expectedRange}</span>
+                      <span className="text-[#8B8D8C] block text-[10px]">Expected Baseline:</span>
+                      <span className="text-[#17191B]">{sig.expectedRange}</span>
                     </div>
                   </div>
                 </div>
@@ -338,26 +337,26 @@ export function CaseDetailModal({
 
           {/* Previous Review Decisions Timeline */}
           {caseData.decisions?.length > 0 && (
-            <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-              <h3 className="font-semibold text-slate-300 uppercase tracking-wider text-[11px] mb-3">
+            <div className="p-4 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] shadow-xs">
+              <h3 className="font-bold text-[#17191B] uppercase tracking-wider text-[11px] font-mono mb-3">
                 Audit Timeline of Analyst Decisions ({caseData.decisions.length})
               </h3>
               <div className="space-y-2">
                 {caseData.decisions.map((dec: any) => (
                   <div
                     key={dec.id}
-                    className="p-3 rounded-lg bg-slate-900 border border-slate-800/80 text-xs"
+                    className="p-3 rounded-[2px] bg-[#F7F7F5] border border-[#D9D6CD] text-xs"
                   >
                     <div className="flex items-center justify-between font-mono text-[11px] mb-1">
-                      <span className="font-bold text-cyan-300">
+                      <span className="font-bold text-[#17191B]">
                         {dec.decision.replace(/_/g, " ")}
                       </span>
-                      <span className="text-slate-500">
+                      <span className="text-[#8B8D8C]">
                         {new Date(dec.timestamp).toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-slate-300 text-[11px]">{dec.reason}</p>
-                    <div className="text-[10px] text-slate-500 font-mono mt-1">
+                    <p className="text-[#5D6266] text-[11px]">{dec.reason}</p>
+                    <div className="text-[10px] text-[#8B8D8C] font-mono mt-1 pt-1 border-t border-[#D9D6CD]">
                       Reviewer: {dec.reviewer} • Status transitioned to {dec.newStatus}
                     </div>
                   </div>
@@ -369,24 +368,24 @@ export function CaseDetailModal({
           {/* Analyst Review Action Panel */}
           <form
             onSubmit={handleSubmitDecision}
-            className="p-4 rounded-xl bg-[#091224] border border-cyan-500/30 shadow-lg space-y-4"
+            className="p-4 rounded-[2px] bg-[#F1F0ED] border border-[#D9D6CD] shadow-xs space-y-4"
           >
-            <div className="flex items-center gap-2 pb-2 border-b border-slate-800">
-              <CheckCircle2 className="w-4 h-4 text-cyan-400" />
-              <h3 className="font-bold text-white text-xs uppercase tracking-wider">
+            <div className="flex items-center gap-2 pb-2 border-b border-[#D9D6CD]">
+              <CheckCircle2 className="w-4 h-4 text-[#17191B]" />
+              <h3 className="font-bold text-[#17191B] text-xs uppercase tracking-wider font-mono">
                 Record Trust & Safety Decision
               </h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
-                <label className="text-slate-400 block mb-1 font-mono text-[11px]">
+                <label className="text-[#5D6266] block mb-1 font-mono text-[11px] font-bold">
                   Select Resolution Action:
                 </label>
                 <select
                   value={decision}
                   onChange={(e) => setDecision(e.target.value)}
-                  className="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-cyan-500"
+                  className="w-full p-2 bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] text-[#17191B] font-mono text-xs focus:outline-none focus:border-[#17191B]"
                 >
                   <option value="DISMISSED_FALSE_POSITIVE">
                     Dismiss False Positive (Protects baseline from penalty)
@@ -407,20 +406,20 @@ export function CaseDetailModal({
               </div>
 
               <div>
-                <label className="text-slate-400 block mb-1 font-mono text-[11px]">
+                <label className="text-[#5D6266] block mb-1 font-mono text-[11px] font-bold">
                   Reviewer Persona / Role:
                 </label>
                 <input
                   type="text"
                   value={reviewer}
                   onChange={(e) => setReviewer(e.target.value)}
-                  className="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-cyan-500"
+                  className="w-full p-2 bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] text-[#17191B] font-mono text-xs focus:outline-none focus:border-[#17191B]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-slate-400 block mb-1 font-mono text-[11px]">
+              <label className="text-[#5D6266] block mb-1 font-mono text-[11px] font-bold">
                 Investigation Notes & Justification (Required for audit compliance):
               </label>
               <textarea
@@ -428,20 +427,20 @@ export function CaseDetailModal({
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Detail why this case is legitimate, false-positive weather glitch, or confirmed rental handoff..."
-                className="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-xs focus:outline-none focus:border-cyan-500 placeholder-slate-600"
+                className="w-full p-2 bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] text-[#17191B] text-xs focus:outline-none focus:border-[#17191B] placeholder-[#8B8D8C]"
               />
             </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-[10px] text-slate-500 font-mono">
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[10px] text-[#8B8D8C] font-mono">
                 Action permanently persists to SQLite & emits immutable AuditEvent
               </span>
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex items-center gap-1.5 px-5 py-2 rounded-lg font-semibold text-xs text-slate-950 bg-gradient-to-r from-cyan-400 to-teal-400 hover:from-cyan-300 hover:to-teal-300 transition cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-[2px] font-bold text-xs text-[#17191B] bg-[#FFD900] hover:bg-[#e6c400] transition cursor-pointer disabled:opacity-50 shadow-xs"
               >
-                <Send className="w-3.5 h-3.5 text-slate-950" />
+                <Send className="w-3.5 h-3.5 text-[#17191B]" />
                 <span>{submitting ? "Persisting..." : "Save Case Decision"}</span>
               </button>
             </div>
