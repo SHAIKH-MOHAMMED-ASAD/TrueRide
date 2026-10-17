@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Rider {
+  id              String   @id @default(cuid())
+  riderId         String   @unique
+  name            String
+  phone           String?
+  city            String
+  enrollmentDate  DateTime
+  accountStatus   String   @default("ACTIVE") // ACTIVE, UNDER_REVIEW, RESTRICTED, SUSPENDED
+  baselineStatus  String   @default("ESTABLISHED") // ESTABLISHED, SPARSE, INSUFFICIENT, DRIFTING
+  avatarUrl       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  sessions        SessionEvent[]
+  baselines       BehavioralBaseline[]
+  assessments     RiskAssessment[]
+  cases           SecurityCase[]
+  verifications   VerificationEvent[]
+}
+
+model SessionEvent {
+  id                     String    @id @default(cuid())
+  eventId                String    @unique
+  riderId                String
+  sessionId              String
+  timestamp              DateTime
+  deviceId               String
+  deviceModel            String?
+  appVersion             String?
+  operatingZone          String
+  city                   String
+  loginHour              Int
+  dayOfWeek              Int
+  sessionDurationMinutes Float?
+  avgIntervalSec         Float?
+  interactionPattern     String?
+  acceptanceRate         Float?
+  completionRate         Float?
+  deliveriesAttempted    Int?
+  deliveriesCompleted    Int?
+  actionSequence         String?   // JSON array
+  sessionTerminationType String?   // NORMAL_LOGOUT, UNEXPECTED_TERMINATION, RAPID_RE_LOGIN, TIMEOUT
+  securityChanges        String?   // JSON object
+  isSimulated            Boolean   @default(false)
+  scenarioName           String?
+  groundTruthLabel       String?   // LEGITIMATE, HANDOFF, NEW_DEVICE, ZONE_CHANGE, FALSE_POSITIVE
+  createdAt              DateTime  @default(now())
+
+  rider                  Rider           @relation(fields: [riderId], references: [riderId])
+  assessment             RiskAssessment?
+  verifications          VerificationEvent[]
+}
+
+model BehavioralBaseline {
+  id                     String   @id @default(cuid())
+  riderId                String
+  version                Int      @default(1)
+  observationWindow      String   @default("Last 30 Days")
+  supportingSessions     Int      @default(30)
+  confidence             String   @default("HIGH") // HIGH, MEDIUM, LOW, INSUFFICIENT
+  typicalHours           String   // JSON array [8, 9, 10, ...]
+  typicalDays            String   // JSON array [1, 2, 3, 4, 5, 6]
+  knownDevices           String   // JSON array ["DEV-101", ...]
+  primaryZones           String   // JSON array ["Koramangala", "HSR Layout"]
+  avgSessionDuration     Float    @default(240)
+  stdSessionDuration     Float    @default(35)
+  avgInteractionInterval Float    @default(14.5)
+  stdInteractionInterval Float    @default(3.2)
+  typicalAcceptanceRate  Float    @default(0.88)
+  typicalCompletionRate  Float    @default(0.96)
+  typicalActions         String   // JSON array
+  lastUpdated            DateTime @default(now())
+
+  rider                  Rider    @relation(fields: [riderId], references: [riderId])
+}
+
+model RiskAssessment {
+  id                  String   @id @default(cuid())
+  riderId             String
+  sessionId           String
+  sessionEventId      String   @unique
+  overallScore        Float    // 0 - 100
+  riskLevel           String   // LOW, MEDIUM, HIGH
+  evidenceQuality     String   // HIGH, MODERATE, LOW, INSUFFICIENT
+  confidenceScore     Float    // 0 - 100
+  behavioralScore     Float    // 0 - 100
+  deviceScore         Float    // 0 - 100
+  locationScore       Float    // 0 - 100
+  sessionAccountScore Float    // 0 - 100
+  historicalScore     Float    // 0 - 100
+  recommendedAction   String   // ALLOW, MONITOR, STEP_UP_VERIFY, ESCALATE_INVESTIGATION
+  scoringVersion      String   @default("v1.0.0")
+  scoringLatencyMs    Float?
+  createdAt           DateTime @default(now())
+
+  rider               Rider        @relation(fields: [riderId], references: [riderId])
+  sessionEvent        SessionEvent @relation(fields: [sessionEventId], references: [id])
+  signals             RiskSignal[]
+  case                SecurityCase?
+}
+
+model RiskSignal {
+  id              String   @id @default(cuid())
+  assessmentId    String
+  category        String   // BEHAVIORAL, DEVICE, LOCATION, SESSION_ACCOUNT, HISTORICAL
+  signalCode      String   // Signal identifier
+  name            String   // Human readable signal name
+  observedValue   String   // Value observed in session
+  expectedRange   String   // Value expected in baseline
+  subscore        Float    // 0 - 100
+  contribution    Float    // Weighted contribution
+  explanation     String   // Human-readable explanation
+  evidenceQuality String   @default("HIGH") // HIGH, MODERATE, LOW
+
+  assessment      RiskAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+}
+
+model SecurityCase {
+  id               String   @id @default(cuid())
+  caseNumber       String   @unique
+  riderId          String
+  assessmentId     String   @unique
+  status           String   @default("NEW_ALERT") // NEW_ALERT, MONITORING, VERIFICATION_REQUIRED, UNDER_INVESTIGATION, VERIFIED_LEGITIMATE, CONFIRMED_ACCOUNT_HANDOFF, DISMISSED_ALERT
+  priority         String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  assignedReviewer String?
+  notes            String?
+  resolutionReason String?
+  resolvedAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  rider            Rider            @relation(fields: [riderId], references: [riderId])
+  assessment       RiskAssessment   @relation(fields: [assessmentId], references: [id])
+  decisions        ReviewDecision[]
+  verifications    VerificationEvent[]
+}
+
+model VerificationEvent {
+  id              String    @id @default(cuid())
+  verificationId  String    @unique
+  riderId         String
+  sessionId       String?
+  sessionEventId  String?
+  caseId          String?
+  verificationType String   @default("FACIAL_BIOMETRIC") // FACIAL_BIOMETRIC, SMS_OTP, SUPERVISOR_CALLBACK, MANUAL_ID_AUDIT
+  status          String    @default("PENDING") // PENDING, COMPLETED, FAILED, EXPIRED
+  result          String    @default("PENDING") // MATCH, NO_MATCH, INCONCLUSIVE, TECHNICAL_UNAVAILABLE, PENDING
+  similarityScore Float?
+  qualityWarning  String?
+  failureReason   String?
+  recoveryMethod  String?
+  timestamp       DateTime  @default(now())
+
+  rider           Rider         @relation(fields: [riderId], references: [riderId])
+  sessionEvent    SessionEvent? @relation(fields: [sessionEventId], references: [id])
+  case            SecurityCase? @relation(fields: [caseId], references: [id])
+}
+
+model ReviewDecision {
+  id             String   @id @default(cuid())
+  caseId         String
+  reviewer       String
+  decision       String   // DISMISSED_FALSE_POSITIVE, VERIFIED_LEGITIMATE, CONFIRMED_ACCOUNT_HANDOFF, REQUESTED_VERIFICATION, ESCALATED
+  reason         String
+  previousStatus String?
+  newStatus      String
+  timestamp      DateTime @default(now())
+
+  case           SecurityCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+}
+
+model AuditEvent {
+  id         String   @id @default(cuid())
+  actor      String
+  eventType  String
+  entityType String
+  entityId   String
+  summary    String
+  details    String?  // JSON metadata
+  timestamp  DateTime @default(now())
+}
