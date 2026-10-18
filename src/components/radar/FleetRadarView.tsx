@@ -11,6 +11,7 @@ import { FleetRadarMap } from "./FleetRadarMap";
 import { RiderMonitorList } from "./RiderMonitorList";
 import { RiderTelemetryPanel } from "./RiderTelemetryPanel";
 import { JudgeScenarioSandbox } from "./JudgeScenarioSandbox";
+import { SuspiciousUserAuthModal } from "@/components/verification/SuspiciousUserAuthModal";
 
 interface FleetRadarViewProps {
   onNavigateToTab?: (tab: string, param?: string) => void;
@@ -21,6 +22,7 @@ interface FleetRadarViewProps {
 export function FleetRadarView({ onNavigateToTab, mapApiKey, mapProvider }: FleetRadarViewProps) {
   // Master courier list state
   const [couriers, setCouriers] = useState<FleetCourier[]>(INITIAL_MUMBAI_COURIERS);
+  const [authCourier, setAuthCourier] = useState<FleetCourier | null>(null);
 
   // Default selected is r_0042 (primary flagged courier)
   const [selectedCourierId, setSelectedCourierId] = useState<string>("r_0042");
@@ -35,6 +37,9 @@ export function FleetRadarView({ onNavigateToTab, mapApiKey, mapProvider }: Flee
 
   // Responsive mobile tab
   const [mobileTab, setMobileTab] = useState<"map" | "list" | "telemetry">("map");
+
+  // Expanded map mode (takes full 12-column grid when toggled)
+  const [isMapExpanded, setIsMapExpanded] = useState<boolean>(false);
 
   // Current selected courier object
   const selectedCourier = useMemo(() => {
@@ -161,24 +166,28 @@ export function FleetRadarView({ onNavigateToTab, mapApiKey, mapProvider }: Flee
         </button>
       </div>
 
-      {/* Three-Column Workspace (Fills available vertical space with min-h-0) */}
+      {/* Workspace Grid (Adapts to 3 columns or full expanded map) */}
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-hidden">
-        {/* Left Column: Rider Monitor */}
-        <div
-          className={`lg:col-span-3 h-full min-h-0 flex flex-col ${
-            mobileTab === "list" ? "block" : "hidden lg:flex"
-          }`}
-        >
-          <RiderMonitorList
-            couriers={couriers}
-            selectedCourier={selectedCourier}
-            onSelectCourier={handleSelectCourier}
-          />
-        </div>
+        {/* Left Column: Rider Monitor (hidden when map is expanded) */}
+        {!isMapExpanded && (
+          <div
+            className={`lg:col-span-3 h-full min-h-0 flex flex-col ${
+              mobileTab === "list" ? "block" : "hidden lg:flex"
+            }`}
+          >
+            <RiderMonitorList
+              couriers={couriers}
+              selectedCourier={selectedCourier}
+              onSelectCourier={handleSelectCourier}
+            />
+          </div>
+        )}
 
-        {/* Center Column: Tactical Radar Map (Immediately visible, properly framed) */}
+        {/* Center Column: Tactical Radar Map (Takes 12 columns if expanded, otherwise 6) */}
         <div
-          className={`lg:col-span-6 h-full min-h-0 flex flex-col ${
+          className={`${
+            isMapExpanded ? "lg:col-span-12" : "lg:col-span-6"
+          } h-full min-h-0 flex flex-col ${
             mobileTab === "map" ? "block" : "hidden lg:flex"
           }`}
         >
@@ -194,20 +203,25 @@ export function FleetRadarView({ onNavigateToTab, mapApiKey, mapProvider }: Flee
             setShowCorridors={setShowCorridors}
             mapApiKey={mapApiKey}
             mapProvider={mapProvider}
+            isExpanded={isMapExpanded}
+            onToggleExpand={() => setIsMapExpanded((v) => !v)}
           />
         </div>
 
-        {/* Right Column: Rider Telemetry */}
-        <div
-          className={`lg:col-span-3 h-full min-h-0 flex flex-col ${
-            mobileTab === "telemetry" ? "block" : "hidden lg:flex"
-          }`}
-        >
-          <RiderTelemetryPanel
-            selectedCourier={selectedCourier}
-            onNavigateToCase={handleNavigateToCase}
-          />
-        </div>
+        {/* Right Column: Rider Telemetry (hidden when map is expanded) */}
+        {!isMapExpanded && (
+          <div
+            className={`lg:col-span-3 h-full min-h-0 flex flex-col ${
+              mobileTab === "telemetry" ? "block" : "hidden lg:flex"
+            }`}
+          >
+            <RiderTelemetryPanel
+              selectedCourier={selectedCourier}
+              onNavigateToCase={handleNavigateToCase}
+              onAuthenticateCourier={(c) => setAuthCourier(c)}
+            />
+          </div>
+        )}
       </div>
 
       {/* Bottom Row: Judge Scenario Sandbox (Pinned at bottom, compact) */}
@@ -215,6 +229,45 @@ export function FleetRadarView({ onNavigateToTab, mapApiKey, mapProvider }: Flee
         activePresetKey={activePresetKey}
         onSelectPreset={handleSelectPreset}
       />
+
+      {/* Suspicious Courier Authentication Modal */}
+      {authCourier && (
+        <SuspiciousUserAuthModal
+          isOpen={true}
+          courier={{
+            id: authCourier.id,
+            name: authCourier.name,
+            riskScore: (authCourier as any).riskScore ?? (authCourier.riskLevel === "L3" ? 84 : 62),
+            riskLevel: authCourier.riskLevel,
+            zone: authCourier.zone,
+            caseId: authCourier.caseId,
+            triggers: authCourier.telemetry?.signals?.map((s) => s.explanation),
+          }}
+          onClose={() => setAuthCourier(null)}
+          onComplete={(result) => {
+            if (result.authVerdict === "AUTHENTICATED") {
+              // Immediately restore courier to L0 Silent on Tactical Radar
+              setCouriers((prev) =>
+                prev.map((c) =>
+                  c.id === authCourier.id
+                    ? {
+                        ...c,
+                        riskLevel: "L0",
+                        telemetry: {
+                          ...c.telemetry,
+                          riskScore: 12,
+                          personBoundConsistency: 0.96,
+                          baselineDriftSigma: 0.4,
+                          signals: [],
+                        },
+                      }
+                    : c
+                )
+              );
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

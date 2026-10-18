@@ -2,9 +2,11 @@ import { prisma } from "../prisma";
 import { ingestSessionEvent } from "./ingestion";
 import { recordCaseDecision } from "./cases";
 import { requestVerification, recordVerificationResult } from "./verification";
+import { resetScaleBenchmarkStore } from "./scaleBenchmarkStore";
 
 export async function resetAndSeedDatabase() {
   console.log("--> Purging existing TrueRide records...");
+  resetScaleBenchmarkStore();
 
   // Purge in relational order
   await prisma.auditEvent.deleteMany();

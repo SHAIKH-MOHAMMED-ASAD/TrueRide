@@ -68,12 +68,6 @@ export function Sidebar({
       icon: Activity,
     },
     {
-      id: "radar" as ActiveTab,
-      label: "Fleet Radar",
-      icon: Radio,
-      badge: "LIVE",
-    },
-    {
       id: "sessions" as ActiveTab,
       label: "Live Sessions",
       icon: Layers,

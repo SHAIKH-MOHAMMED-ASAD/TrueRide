@@ -171,3 +171,312 @@ export async function recordCaseDecision(params: {
 
   return updatedCase;
 }
+
+export interface CreateCaseParams {
+  riderId: string;
+  riderName?: string;
+  priority?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | string;
+  status?: string;
+  assignedReviewer?: string;
+  title?: string;
+  notes?: string;
+  riskScore?: number;
+  triggerSignals?: Array<{
+    name: string;
+    category?: string;
+    signalCode?: string;
+    observedValue?: string;
+    expectedRange?: string;
+    subscore?: number;
+    contribution?: number;
+    explanation?: string;
+    evidenceQuality?: string;
+  }>;
+  actor?: string;
+}
+
+export interface UpdateCaseParams {
+  status?: string;
+  priority?: string;
+  assignedReviewer?: string;
+  notes?: string;
+  resolutionReason?: string;
+  decision?: string;
+  actor?: string;
+}
+
+export async function createSecurityCase(params: CreateCaseParams) {
+  const {
+    riderId,
+    riderName,
+    priority = "HIGH",
+    status = "NEW_ALERT",
+    assignedReviewer,
+    title = "Manual Identity Investigation",
+    notes,
+    riskScore = 75,
+    triggerSignals = [],
+    actor = "ANALYST",
+  } = params;
+
+  return prisma.$transaction(async (tx) => {
+    // 1. Ensure Rider exists
+    let rider = await tx.rider.findUnique({ where: { riderId } });
+    if (!rider) {
+      rider = await tx.rider.create({
+        data: {
+          riderId,
+          name: riderName || `Rider ${riderId}`,
+          phone: "+91 98000 00000",
+          city: "Mumbai",
+          enrollmentDate: new Date(),
+        },
+      });
+    } else if (riderName && rider.name !== riderName) {
+      rider = await tx.rider.update({
+        where: { riderId },
+        data: { name: riderName },
+      });
+    }
+
+    // 2. Create Session Event
+    const sessionId = `MANUAL-SES-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const eventId = `EVT-${sessionId}`;
+    const sessionEvent = await tx.sessionEvent.create({
+      data: {
+        eventId,
+        sessionId,
+        riderId,
+        timestamp: new Date(),
+        deviceId: "DEV-FLAG-MANUAL",
+        operatingZone: "Bandra Kurla Complex (BKC)",
+        city: rider.city || "Mumbai",
+        loginHour: new Date().getHours(),
+        dayOfWeek: new Date().getDay(),
+        isSimulated: false,
+        scenarioName: title,
+        groundTruthLabel: "HANDOFF",
+      },
+    });
+
+    // 3. Create Risk Assessment
+    const score = Math.max(0, Math.min(100, Number(riskScore)));
+    const riskLevel = score >= 70 ? "HIGH" : score >= 40 ? "MEDIUM" : "LOW";
+    const recommendedAction =
+      score >= 70 ? "ESCALATE_INVESTIGATION" : score >= 50 ? "STEP_UP_VERIFY" : "MONITOR";
+
+    const assessment = await tx.riskAssessment.create({
+      data: {
+        riderId,
+        sessionId,
+        sessionEventId: sessionEvent.id,
+        overallScore: score,
+        riskLevel,
+        evidenceQuality: "HIGH",
+        confidenceScore: 92,
+        behavioralScore: score * 0.95,
+        deviceScore: score * 0.9,
+        locationScore: score * 0.85,
+        sessionAccountScore: score,
+        historicalScore: score * 0.8,
+        recommendedAction,
+        scoringVersion: "v1.0.0",
+      },
+    });
+
+    // 4. Create Signals
+    const signals =
+      triggerSignals.length > 0
+        ? triggerSignals
+        : [
+            {
+              category: "BEHAVIORAL",
+              signalCode: "MANUAL_CASE_EVIDENCE",
+              name: title,
+              observedValue: notes || "Manual investigation opened by analyst",
+              expectedRange: "Normal Enrolled Baseline",
+              subscore: score,
+              contribution: 0.35,
+              explanation: notes || "Flagged in review queue for priority identity audit",
+              evidenceQuality: "HIGH",
+            },
+            {
+              category: "DEVICE",
+              signalCode: "DEVICE_RISK_FLAG",
+              name: "Hardware Integrity Check",
+              observedValue: "Secondary Device Anomaly",
+              expectedRange: "Registered Hardware",
+              subscore: Math.min(100, score + 5),
+              contribution: 0.25,
+              explanation: "Device telemetry inconsistent with baseline fingerprint",
+              evidenceQuality: "HIGH",
+            },
+          ];
+
+    for (const sig of signals) {
+      await tx.riskSignal.create({
+        data: {
+          assessmentId: assessment.id,
+          category: sig.category || "BEHAVIORAL",
+          signalCode: sig.signalCode || "SIGNAL_FLAG",
+          name: sig.name || "Risk Indicator",
+          observedValue: sig.observedValue || "Observed Anomaly",
+          expectedRange: sig.expectedRange || "Normal Baseline",
+          subscore: sig.subscore || score,
+          contribution: sig.contribution || 0.3,
+          explanation: sig.explanation || "Manual investigation evidence point",
+          evidenceQuality: sig.evidenceQuality || "HIGH",
+        },
+      });
+    }
+
+    // 5. Generate case number
+    const caseCount = await tx.securityCase.count();
+    const caseNumber = `CASE-${new Date().getFullYear()}-${String(caseCount + 101).padStart(4, "0")}`;
+
+    // 6. Create Security Case
+    const secCase = await tx.securityCase.create({
+      data: {
+        caseNumber,
+        riderId,
+        assessmentId: assessment.id,
+        status,
+        priority,
+        assignedReviewer: assignedReviewer || actor,
+        notes: notes || title,
+      },
+      include: {
+        rider: true,
+        assessment: {
+          include: {
+            sessionEvent: true,
+            signals: true,
+          },
+        },
+      },
+    });
+
+    // 7. Write to Audit Trail
+    await tx.auditEvent.create({
+      data: {
+        actor: actor || assignedReviewer || "ANALYST",
+        eventType: "CASE_CREATED",
+        entityType: "CASE",
+        entityId: secCase.id,
+        summary: `Security case ${caseNumber} created for Rider ${riderId} (${priority}) by ${actor || assignedReviewer || "Analyst"}`,
+        details: JSON.stringify({
+          caseNumber,
+          riderId,
+          riderName: rider.name,
+          priority,
+          status,
+          riskScore: score,
+          title,
+          notes: secCase.notes,
+          assignedReviewer: secCase.assignedReviewer,
+        }),
+      },
+    });
+
+    return secCase;
+  });
+}
+
+export async function updateSecurityCase(caseId: string, params: UpdateCaseParams) {
+  const {
+    status,
+    priority,
+    assignedReviewer,
+    notes,
+    resolutionReason,
+    decision,
+    actor = "ANALYST",
+  } = params;
+
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.securityCase.findUnique({
+      where: { id: caseId },
+      include: { rider: true, assessment: true },
+    });
+
+    if (!existing) {
+      throw new Error(`Security case ${caseId} not found`);
+    }
+
+    const isResolved = status
+      ? [
+          "VERIFIED_LEGITIMATE",
+          "CONFIRMED_ACCOUNT_HANDOFF",
+          "DISMISSED_ALERT",
+        ].includes(status)
+      : false;
+
+    const dataToUpdate: any = {};
+    if (status !== undefined) dataToUpdate.status = status;
+    if (priority !== undefined) dataToUpdate.priority = priority;
+    if (assignedReviewer !== undefined) dataToUpdate.assignedReviewer = assignedReviewer;
+    if (notes !== undefined) dataToUpdate.notes = notes;
+    if (resolutionReason !== undefined) dataToUpdate.resolutionReason = resolutionReason;
+    if (isResolved) dataToUpdate.resolvedAt = new Date();
+
+    const updated = await tx.securityCase.update({
+      where: { id: caseId },
+      data: dataToUpdate,
+      include: {
+        rider: true,
+        assessment: {
+          include: {
+            sessionEvent: true,
+            signals: true,
+          },
+        },
+        decisions: {
+          orderBy: { timestamp: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    // If decision provided, record it in reviewDecision
+    if (decision) {
+      await tx.reviewDecision.create({
+        data: {
+          caseId,
+          reviewer: actor || assignedReviewer || "ANALYST",
+          decision,
+          reason: resolutionReason || notes || `Decision recorded as ${decision}`,
+          previousStatus: existing.status,
+          newStatus: status || existing.status,
+        },
+      });
+    }
+
+    // Write to Audit Trail
+    const eventType = decision ? "CASE_DECISION_RECORDED" : "CASE_UPDATED";
+    await tx.auditEvent.create({
+      data: {
+        actor: actor || assignedReviewer || "ANALYST",
+        eventType,
+        entityType: "CASE",
+        entityId: caseId,
+        summary: `Case ${existing.caseNumber} updated: ${
+          status && status !== existing.status ? `status [${existing.status} -> ${status}]` : ""
+        } ${priority && priority !== existing.priority ? `priority [${existing.priority} -> ${priority}]` : ""} by ${actor || "Analyst"}`.trim(),
+        details: JSON.stringify({
+          caseNumber: existing.caseNumber,
+          riderId: existing.riderId,
+          previousStatus: existing.status,
+          newStatus: status || existing.status,
+          previousPriority: existing.priority,
+          newPriority: priority || existing.priority,
+          assignedReviewer: assignedReviewer || existing.assignedReviewer,
+          notes,
+          resolutionReason,
+          decision,
+        }),
+      },
+    });
+
+    return updated;
+  });
+}

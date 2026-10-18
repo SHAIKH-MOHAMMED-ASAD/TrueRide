@@ -526,3 +526,45 @@ export function runSystemEvaluation(): EvaluationMetricsResult {
     items,
   };
 }
+
+/**
+ * Format system evaluation benchmark into clean, structured CSV
+ */
+export function exportEvaluationToCsv(evaluation: EvaluationMetricsResult): string {
+  const summaryLines = [
+    `"=== TrueRide System Evaluation Benchmark Summary ==="`,
+    `"Metric","Value"`,
+    `"Total Evaluated",${evaluation.totalEvaluated}`,
+    `"Precision (%)",${evaluation.precision}`,
+    `"Recall (%)",${evaluation.recall}`,
+    `"F1 Score (%)",${evaluation.f1Score}`,
+    `"False Positive Rate (%)",${evaluation.falsePositiveRate}`,
+    `"Challenge Rate (%)",${evaluation.challengeRate}`,
+    `"True Positives",${evaluation.truePositives}`,
+    `"False Positives",${evaluation.falsePositives}`,
+    `"True Negatives",${evaluation.trueNegatives}`,
+    `"False Negatives",${evaluation.falseNegatives}`,
+    `"Average Latency (ms)",${evaluation.avgLatencyMs}`,
+    `"P95 Latency (ms)",${evaluation.p95LatencyMs}`,
+    ``,
+    `"=== Detailed Test Item Results ==="`,
+    `"itemId","name","groundTruth","scenarioType","predictedRiskLevel","overallScore","recommendedAction","classification","isCorrect","latencyMs"`,
+  ];
+
+  const detailLines = evaluation.items.map((it) =>
+    [
+      it.id,
+      `"${it.name.replace(/"/g, '""')}"`,
+      it.groundTruth,
+      it.scenarioType,
+      it.predictedRiskLevel,
+      it.overallScore,
+      it.recommendedAction,
+      it.classification,
+      it.isCorrect ? "true" : "false",
+      it.latencyMs,
+    ].join(",")
+  );
+
+  return [...summaryLines, ...detailLines].join("\n");
+}

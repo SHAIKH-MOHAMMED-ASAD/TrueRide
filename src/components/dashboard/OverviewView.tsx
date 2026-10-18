@@ -14,6 +14,8 @@ import {
   Award,
   Eye,
   Radio,
+  Download,
+  FileSpreadsheet,
 } from "lucide-react";
 import { RiskBadge, ActionBadge } from "../common/RiskBadge";
 
@@ -76,11 +78,11 @@ export function OverviewView({
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <button
-              onClick={() => onNavigateTab("radar")}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-[2px] font-bold text-xs text-[#090D18] bg-[#36D5E8] hover:bg-[#25c0d3] transition cursor-pointer shadow-sm tracking-tight"
+              onClick={() => onNavigateTab("verification")}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-[2px] font-bold text-xs text-[#090D18] bg-[#06B6D4] hover:bg-[#0891B2] transition cursor-pointer shadow-sm tracking-tight"
             >
-              <Radio className="w-4 h-4 text-[#090D18]" />
-              <span>Fleet Radar (Live)</span>
+              <Camera className="w-4 h-4 text-[#090D18]" />
+              <span>Step-Up Verification</span>
             </button>
             <button
               onClick={() => onNavigateTab("simulator")}
@@ -336,17 +338,27 @@ export function OverviewView({
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-[#D9D6CD] flex items-center justify-between text-xs">
+          <div className="mt-4 pt-3 border-t border-[#D9D6CD] flex flex-wrap items-center justify-between gap-2 text-xs">
             <span className="text-[11px] text-[#8B8D8C] font-mono">
               Labelled set: {evaluationSummary.totalEvaluated || 15} sessions
             </span>
-            <button
-              onClick={() => onNavigateTab("evaluation")}
-              className="text-xs font-mono font-bold text-[#17191B] hover:text-[#5D6266] flex items-center gap-1 cursor-pointer"
-            >
-              <span>Inspect Confusion Matrix</span>
-              <ArrowRight className="w-3.5 h-3.5 text-[#FFD900]" />
-            </button>
+            <div className="flex items-center gap-3">
+              <a
+                href="/api/evaluation/metrics?format=csv"
+                download="trueride_system_evaluation.csv"
+                className="text-xs font-mono font-bold text-[#24813A] hover:text-[#1E6B30] flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export CSV</span>
+              </a>
+              <button
+                onClick={() => onNavigateTab("evaluation")}
+                className="text-xs font-mono font-bold text-[#17191B] hover:text-[#5D6266] flex items-center gap-1 cursor-pointer"
+              >
+                <span>Inspect Confusion Matrix</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#FFD900]" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

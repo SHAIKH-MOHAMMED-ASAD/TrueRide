@@ -10,9 +10,14 @@ import {
   Clock,
   Eye,
   RefreshCw,
+  PlusCircle,
+  Sliders,
+  Download,
+  FileSpreadsheet,
 } from "lucide-react";
 import { RiskBadge, ActionBadge } from "../common/RiskBadge";
 import { CaseDetailModal } from "./CaseDetailModal";
+import { CreateCaseModal } from "./CreateCaseModal";
 
 interface CaseQueueViewProps {
   initialCaseId?: string | null;
@@ -31,6 +36,8 @@ export function CaseQueueView({
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(
     initialCaseId || null
   );
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [updatingCaseId, setUpdatingCaseId] = useState<string | null>(null);
 
   const fetchCases = async () => {
     try {
@@ -59,53 +66,113 @@ export function CaseQueueView({
     fetchCases();
   };
 
+  const handleQuickStatusUpdate = async (caseId: string, newStatus: string) => {
+    try {
+      setUpdatingCaseId(caseId);
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: newStatus,
+          actor: "T&S Analyst (Demo)",
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update case");
+
+      // Optimistically update case status in list
+      setCases((prev) =>
+        prev.map((c) => (c.id === caseId ? { ...c, status: newStatus } : c))
+      );
+      if (onRefreshMetrics) onRefreshMetrics();
+    } catch (err) {
+      console.error("Error updating case status:", err);
+    } finally {
+      setUpdatingCaseId(null);
+    }
+  };
+
+  const handleExportCasesCsv = () => {
+    const headers = [
+      "caseNumber",
+      "riderId",
+      "priority",
+      "status",
+      "riskScore",
+      "assignedReviewer",
+      "createdAt",
+      "notes",
+    ];
+    const rows = cases.map((c) => [
+      c.caseNumber,
+      c.riderId,
+      c.priority,
+      c.status,
+      c.assessment?.overallScore ?? "",
+      `"${(c.assignedReviewer || "").replace(/"/g, '""')}"`,
+      `"${c.createdAt}"`,
+      `"${(c.notes || "").replace(/"/g, '""')}"`,
+    ]);
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `trueride_cases_${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "NEW_ALERT":
         return (
-          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#FCE5E3] text-[#D52222] border border-[#D52222]/40 font-bold">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#FCE5E3] text-[#D52222] border border-[#D52222]/40 font-bold whitespace-nowrap">
             NEW ALERT
           </span>
         );
       case "VERIFICATION_REQUIRED":
         return (
-          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#FFF5D6] text-[#E7A500] border border-[#E7A500]/40 font-bold">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#FFF5D6] text-[#E7A500] border border-[#E7A500]/40 font-bold whitespace-nowrap">
             VERIFY REQUIRED
           </span>
         );
       case "UNDER_INVESTIGATION":
         return (
-          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#F1F0ED] text-[#17191B] border border-[#D9D6CD] font-bold">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#F1F0ED] text-[#17191B] border border-[#D9D6CD] font-bold whitespace-nowrap">
             INVESTIGATION
           </span>
         );
       case "MONITORING":
         return (
-          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#F1F0ED] text-[#5D6266] border border-[#D9D6CD]">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#F1F0ED] text-[#5D6266] border border-[#D9D6CD] whitespace-nowrap">
             MONITORING
           </span>
         );
       case "VERIFIED_LEGITIMATE":
         return (
-          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#E8F4E8] text-[#24813A] border border-[#24813A]/40 font-bold">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#E8F4E8] text-[#24813A] border border-[#24813A]/40 font-bold whitespace-nowrap">
             LEGITIMATE
           </span>
         );
       case "CONFIRMED_ACCOUNT_HANDOFF":
         return (
-          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#FCE5E3] text-[#D52222] border border-[#D52222]/50 font-bold">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#FCE5E3] text-[#D52222] border border-[#D52222]/50 font-bold whitespace-nowrap">
             CONFIRMED HANDOFF
           </span>
         );
       case "DISMISSED_ALERT":
         return (
-          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#F1F0ED] text-[#8B8D8C] border border-[#D9D6CD]">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#F1F0ED] text-[#8B8D8C] border border-[#D9D6CD] whitespace-nowrap">
             DISMISSED
           </span>
         );
       default:
         return (
-          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#F1F0ED] text-[#5D6266] border border-[#D9D6CD]">
+          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono bg-[#F1F0ED] text-[#5D6266] border border-[#D9D6CD] whitespace-nowrap">
             {status}
           </span>
         );
@@ -119,7 +186,7 @@ export function CaseQueueView({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-mono font-bold tracking-widest text-[#D52222] uppercase">
-              TRIAGE & INVESTIGATION
+              TRIAGE &amp; INVESTIGATION
             </span>
             <span className="text-[#8B8D8C] text-xs font-mono">•</span>
             <span className="text-[11px] font-mono text-[#5D6266]">
@@ -135,13 +202,33 @@ export function CaseQueueView({
           </p>
         </div>
 
-        <button
-          onClick={fetchCases}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] text-xs font-mono font-bold text-[#17191B] bg-[#F1F0ED] hover:bg-[#D9D6CD] border border-[#D9D6CD] transition cursor-pointer self-start sm:self-auto"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#17191B]" : ""}`} />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-[2px] text-xs font-mono font-bold text-[#070C18] bg-[#FFD900] hover:bg-[#E6C300] border border-[#FFD900] transition cursor-pointer shadow-xs"
+          >
+            <PlusCircle className="w-3.5 h-3.5 text-[#070C18]" />
+            <span>New Case</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleExportCasesCsv}
+            disabled={cases.length === 0}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] text-xs font-mono font-bold text-[#24813A] bg-[#FFFFFF] hover:bg-[#F1F0ED] border border-[#D9D6CD] transition cursor-pointer disabled:opacity-50 shadow-2xs"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-[#24813A]" />
+            <span>Export (CSV)</span>
+          </button>
+          <button
+            type="button"
+            onClick={fetchCases}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-[2px] text-xs font-mono font-bold text-[#17191B] bg-[#F1F0ED] hover:bg-[#D9D6CD] border border-[#D9D6CD] transition cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#17191B]" : ""}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Toolbar */}
@@ -193,11 +280,11 @@ export function CaseQueueView({
                 <th className="py-3 px-4">Case #</th>
                 <th className="py-3 px-4">Rider</th>
                 <th className="py-3 px-4">Risk Score</th>
-                <th className="py-3 px-4">Investigation Status</th>
+                <th className="py-3 px-4">Investigation Status (Quick Update)</th>
                 <th className="py-3 px-4">Priority</th>
                 <th className="py-3 px-4">Recommendation</th>
                 <th className="py-3 px-4">Last Updated</th>
-                <th className="py-3 px-4 text-right">Inspect</th>
+                <th className="py-3 px-4 text-right">Inspect / Edit</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#D9D6CD]">
@@ -239,7 +326,26 @@ export function CaseQueueView({
                         />
                       )}
                     </td>
-                    <td className="py-3 px-4">{getStatusBadge(c.status)}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {getStatusBadge(c.status)}
+                        <select
+                          value={c.status}
+                          disabled={updatingCaseId === c.id}
+                          onChange={(e) => handleQuickStatusUpdate(c.id, e.target.value)}
+                          title="Quick update status (persists to DB & emits audit event)"
+                          className="text-[10px] font-mono py-0.5 px-1 bg-[#F1F0ED] hover:bg-[#E5E5E2] border border-[#D9D6CD] rounded-[1px] text-[#17191B] cursor-pointer"
+                        >
+                          <option value="NEW_ALERT">NEW_ALERT</option>
+                          <option value="VERIFICATION_REQUIRED">VERIFY REQUIRED</option>
+                          <option value="UNDER_INVESTIGATION">UNDER_INVESTIGATION</option>
+                          <option value="MONITORING">MONITORING</option>
+                          <option value="VERIFIED_LEGITIMATE">LEGITIMATE</option>
+                          <option value="CONFIRMED_ACCOUNT_HANDOFF">CONFIRMED HANDOFF</option>
+                          <option value="DISMISSED_ALERT">DISMISSED</option>
+                        </select>
+                      </div>
+                    </td>
                     <td className="py-3 px-4">
                       <span
                         className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-[1px] border ${
@@ -272,7 +378,7 @@ export function CaseQueueView({
                         className="px-3 py-1 rounded-[2px] bg-[#F1F0ED] hover:bg-[#D9D6CD] text-[#17191B] font-mono text-xs font-bold flex items-center gap-1 border border-[#D9D6CD] ml-auto cursor-pointer transition shadow-xs"
                       >
                         <Eye className="w-3.5 h-3.5 text-[#17191B]" />
-                        <span>Inspect</span>
+                        <span>Inspect / Edit</span>
                       </button>
                     </td>
                   </tr>
@@ -283,7 +389,19 @@ export function CaseQueueView({
         </div>
       </div>
 
-      {/* Case Detail Modal */}
+      {/* Create New Case Modal */}
+      {isCreateModalOpen && (
+        <CreateCaseModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onCaseCreated={() => {
+            fetchCases();
+            if (onRefreshMetrics) onRefreshMetrics();
+          }}
+        />
+      )}
+
+      {/* Case Detail & Update Modal */}
       {selectedCaseId && (
         <CaseDetailModal
           caseId={selectedCaseId}

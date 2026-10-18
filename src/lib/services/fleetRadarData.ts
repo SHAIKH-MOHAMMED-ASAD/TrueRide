@@ -353,9 +353,9 @@ export const INITIAL_MUMBAI_COURIERS: FleetCourier[] = [
     },
     isSyndicateNode: true,
   },
-  // Auto-generate remaining couriers up to 60 with realistic Mumbai coordinates
+  // Auto-generate remaining couriers with guaranteed unique IDs (starting at r_0101 to avoid overlap)
   ...Array.from({ length: 52 }, (_, i) => {
-    const num = i + 35;
+    const num = i + 101;
     const padId = `r_${num.toString().padStart(4, "0")}`;
     const zones = [
       { name: "Andheri West", x: 34, y: 24 },

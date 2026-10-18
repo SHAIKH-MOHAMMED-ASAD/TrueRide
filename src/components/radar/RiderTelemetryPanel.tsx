@@ -15,11 +15,13 @@ import { FleetCourier } from "@/lib/services/fleetRadarData";
 interface RiderTelemetryPanelProps {
   selectedCourier: FleetCourier;
   onNavigateToCase?: (caseId: string) => void;
+  onAuthenticateCourier?: (courier: FleetCourier) => void;
 }
 
 export function RiderTelemetryPanel({
   selectedCourier,
   onNavigateToCase,
+  onAuthenticateCourier,
 }: RiderTelemetryPanelProps) {
   const { telemetry } = selectedCourier;
 
@@ -289,9 +291,23 @@ export function RiderTelemetryPanel({
           </div>
         )}
 
+        {/* Step-Up Authentication Trigger for Suspicious Couriers */}
+        {(selectedCourier.riskLevel === "L2" || selectedCourier.riskLevel === "L3" || ((selectedCourier as any).riskScore || 0) >= 40) && (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => onAuthenticateCourier?.(selectedCourier)}
+              className="w-full py-2.5 px-3 bg-[#17191B] hover:bg-[#2F3130] text-[#FFD900] rounded-[2px] text-xs font-mono font-bold flex items-center justify-center gap-2 transition cursor-pointer shadow-xs border border-[#30363D]"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-[#FFD900]" />
+              <span>Authenticate Suspicious Courier</span>
+            </button>
+          </div>
+        )}
+
         {/* Investigation Case Link */}
         {selectedCourier.caseId && (
-          <div className="pt-1">
+          <div className="pt-0.5">
             <button
               type="button"
               onClick={() => onNavigateToCase?.(selectedCourier.caseId!)}

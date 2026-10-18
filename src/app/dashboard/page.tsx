@@ -43,10 +43,14 @@ export default function DashboardPage() {
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.replace("#", "") as ActiveTab;
+      if (hash === "radar") {
+        setActiveTab("dashboard");
+        window.location.hash = "dashboard";
+        return;
+      }
       if (
         [
           "dashboard",
-          "radar",
           "simulator",
           "cases",
           "sessions",
@@ -106,30 +110,12 @@ export default function DashboardPage() {
         />
 
         {/* Workspace Content */}
-        <main
-          className={`flex-1 w-full ${
-            activeTab === "radar"
-              ? "p-0 bg-[#F7F7F5] h-[calc(100vh-3.5rem)] overflow-hidden"
-              : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
-          }`}
-        >
+        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {activeTab === "dashboard" && (
             <OverviewView
               metrics={metrics}
               onNavigateTab={handleSelectTab}
               onOpenCase={handleOpenCase}
-            />
-          )}
-
-          {activeTab === "radar" && (
-            <FleetRadarView
-              onNavigateToTab={(tab, param) => {
-                if (tab === "cases" && param) {
-                  handleOpenCase(param);
-                } else {
-                  handleSelectTab(tab as ActiveTab);
-                }
-              }}
             />
           )}
 

@@ -164,13 +164,13 @@ export function RiderMonitorList({
             No couriers match current filter
           </div>
         ) : (
-          filteredCouriers.map((courier) => {
+          filteredCouriers.map((courier, index) => {
             const isSelected = courier.id === selectedCourier.id;
             const badgeClass = getRiskBadgeStyles(courier.riskLevel);
 
             return (
               <div
-                key={courier.id}
+                key={`${courier.id}-${index}`}
                 onClick={() => onSelectCourier(courier)}
                 className={`p-2.5 rounded-[2px] cursor-pointer transition-all border ${
                   isSelected

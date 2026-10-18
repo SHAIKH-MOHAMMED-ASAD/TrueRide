@@ -14,7 +14,72 @@ import {
   PhoneCall,
   Sparkles,
   Lock,
+  Key,
+  ShieldAlert,
+  Radio,
+  ArrowRight,
+  Shield,
+  Smartphone,
+  ExternalLink,
 } from "lucide-react";
+import {
+  SuspiciousUserAuthModal,
+  SuspiciousCourierTarget,
+} from "./SuspiciousUserAuthModal";
+import { AuthDecisionFramework } from "./AuthDecisionFramework";
+import { VoiceChallengeStudio } from "./VoiceChallengeStudio";
+
+export const SUSPICIOUS_COURIERS: SuspiciousCourierTarget[] = [
+  {
+    id: "r_0042",
+    name: "Sanjay Verma",
+    riskScore: 94,
+    riskLevel: "L3",
+    zone: "Bandra Kurla Complex (BKC)",
+    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200",
+    triggers: [
+      "SIM Swap Confirmed (42m ago)",
+      "Device IMSI Discrepancy",
+      "Typing Cadence Deviation 89%",
+    ],
+  },
+  {
+    id: "r_0053",
+    name: "Rahul Sharma",
+    riskScore: 78,
+    riskLevel: "L2",
+    zone: "Andheri East Logistics Hub",
+    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200",
+    triggers: [
+      "Speed Discrepancy (118 km/h on bicycle)",
+      "Dual Session Conflict Detected",
+    ],
+  },
+  {
+    id: "r_0019",
+    name: "Vikram Malhotra",
+    riskScore: 68,
+    riskLevel: "L2",
+    zone: "Dadar Central Corridor",
+    avatarUrl: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=200",
+    triggers: [
+      "GPS Teleportation (4.2km in 12s)",
+      "Unregistered Handset IMEI",
+    ],
+  },
+  {
+    id: "RDR-8021",
+    name: "Arjun Kumar",
+    riskScore: 84,
+    riskLevel: "L3",
+    zone: "Koramangala 4th Block",
+    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",
+    triggers: [
+      "Account Renting Signature Flagged",
+      "Unusual Midnight Route Variance",
+    ],
+  },
+];
 
 interface VerificationCenterProps {
   onRefreshMetrics?: () => void;
@@ -30,6 +95,37 @@ export function VerificationCenterView({ onRefreshMetrics }: VerificationCenterP
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isReloadPromptNeeded, setIsReloadPromptNeeded] = useState(false);
   const [liveStream, setLiveStream] = useState<MediaStream | null>(null);
+
+  // Suspicious courier authentication states
+  const [activeAuthCourier, setActiveAuthCourier] = useState<SuspiciousCourierTarget | null>(null);
+  const [recentAuthRecords, setRecentAuthRecords] = useState<
+    Array<{
+      riderId: string;
+      name: string;
+      outcome: string;
+      token: string;
+      timestamp: string;
+      decision: string;
+    }>
+  >([]);
+
+  const handleStepUpComplete = (res: any) => {
+    if (activeAuthCourier) {
+      setRecentAuthRecords((prev) => [
+        {
+          riderId: activeAuthCourier.id,
+          name: activeAuthCourier.name,
+          outcome: res.outcome,
+          token: res.token || "N/A",
+          timestamp: new Date().toLocaleTimeString(),
+          decision: res.decision || "COMPLETED",
+        },
+        ...prev.slice(0, 4),
+      ]);
+    }
+    setActiveAuthCourier(null);
+    if (onRefreshMetrics) onRefreshMetrics();
+  };
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -291,6 +387,156 @@ export function VerificationCenterView({ onRefreshMetrics }: VerificationCenterP
           </div>
         </div>
       </div>
+
+      {/* Suspicious Couriers Authentication Triage Hub */}
+      <div className="p-5 rounded-[2px] bg-[#070C18] border border-[#06B6D4]/40 text-white shadow-xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#1E293B] gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-[2px] bg-[#06B6D4]/20 border border-[#06B6D4]/50 flex items-center justify-center text-[#06B6D4]">
+              <ShieldAlert className="w-4 h-4 text-[#06B6D4]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold tracking-widest text-[#06B6D4] uppercase">
+                  ACTIVE THREAT TRIAGE
+                </span>
+                <span className="px-1.5 py-0.5 rounded-[1px] bg-[#D52222]/30 text-[#F87171] border border-[#D52222]/50 text-[10px] font-mono font-bold">
+                  {SUSPICIOUS_COURIERS.length} FLAGGED SUSPECTS
+                </span>
+              </div>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
+                Suspicious User Authentication & Step-Up Clearance
+              </h2>
+            </div>
+          </div>
+          <span className="text-xs font-mono text-[#94A3B8]">
+            Multi-Factor Zero-Knowledge Protocol (SIM OTP + Live Biometric Facial Liveness)
+          </span>
+        </div>
+
+        {/* Courier Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {SUSPICIOUS_COURIERS.map((c) => (
+            <div
+              key={c.id}
+              className={`p-3.5 rounded-[2px] border transition-all flex flex-col justify-between ${
+                c.riskLevel === "L3"
+                  ? "bg-[#0B132B]/80 border-[#D52222]/40 hover:border-[#D52222]"
+                  : "bg-[#0B132B]/80 border-[#FFD900]/40 hover:border-[#FFD900]"
+              }`}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-10 rounded-[2px] overflow-hidden bg-[#1E293B] border border-[#334155] shrink-0">
+                      <img
+                        src={c.avatarUrl}
+                        alt={c.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white leading-tight">{c.name}</div>
+                      <div className="text-[11px] font-mono text-[#94A3B8]">{c.id}</div>
+                    </div>
+                  </div>
+                  <span
+                    className={`px-1.5 py-0.5 rounded-[1px] text-[10px] font-mono font-bold ${
+                      c.riskLevel === "L3"
+                        ? "bg-[#D52222] text-white"
+                        : "bg-[#FFD900] text-[#070C18]"
+                    }`}
+                  >
+                    {c.riskLevel} • {c.riskScore}
+                  </span>
+                </div>
+
+                <div className="text-[11px] font-mono text-[#64748B] mb-2 flex items-center gap-1">
+                  <span>Zone:</span>
+                  <span className="text-[#CBD5E1] truncate">{c.zone}</span>
+                </div>
+
+                {/* Threat Triggers */}
+                <div className="space-y-1 mb-3">
+                  {c.triggers?.map((t, idx) => (
+                    <div
+                      key={idx}
+                      className="text-[10px] font-mono px-1.5 py-0.5 rounded-[1px] bg-[#1E293B] border border-[#334155] text-[#F87171] truncate"
+                    >
+                      • {t}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-1.5 pt-2 border-t border-[#1E293B]">
+                <button
+                  type="button"
+                  onClick={() => setActiveAuthCourier(c)}
+                  className="w-full py-2 px-2.5 rounded-[2px] bg-[#06B6D4] hover:bg-[#0891B2] text-[#070C18] font-bold text-[11px] font-mono uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-[#06B6D4]/20 transition"
+                >
+                  <Key className="w-3.5 h-3.5 text-[#070C18]" />
+                  <span>Step-Up Authenticate</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRider(c.id)}
+                  className="w-full py-1 px-2 rounded-[2px] bg-[#1E293B] hover:bg-[#334155] text-[#94A3B8] hover:text-white font-mono text-[10px] flex items-center justify-center gap-1 cursor-pointer transition"
+                >
+                  <Eye className="w-3 h-3" />
+                  <span>Load into Camera Feed</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Recent Authentication Ledger */}
+        {recentAuthRecords.length > 0 && (
+          <div className="pt-3 border-t border-[#1E293B]">
+            <div className="text-[11px] font-mono text-[#94A3B8] mb-2 font-bold tracking-wider uppercase">
+              Recent Session Step-Up Clearances:
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {recentAuthRecords.map((r, idx) => (
+                <div
+                  key={idx}
+                  className={`p-2 rounded-[2px] border text-xs font-mono flex items-center justify-between ${
+                    r.outcome === "AUTHENTICATED_CLEARED"
+                      ? "bg-[#064E3B]/40 border-[#10B981]/50 text-[#6EE7B7]"
+                      : "bg-[#7F1D1D]/40 border-[#EF4444]/50 text-[#FCA5A5]"
+                  }`}
+                >
+                  <div>
+                    <span className="font-bold">{r.name}</span> ({r.riderId}) • {r.timestamp}
+                    <div className="text-[10px] opacity-80 truncate">
+                      Token: {r.token.slice(0, 24)}...
+                    </div>
+                  </div>
+                  <span className="font-bold text-[10px] px-1.5 py-0.5 rounded-[1px] bg-black/40">
+                    {r.outcome}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Voice Challenge Studio & Dynamic Audio Waveform Inspector */}
+      <VoiceChallengeStudio
+        initialRiderId="RDR-8021"
+        onVerificationComplete={(res) => {
+          console.log("Voice Challenge verified:", res);
+        }}
+      />
+
+      {/* Authentication Methods & Risk Decision Architecture Model */}
+      <AuthDecisionFramework
+        title="Authentication Framework & Proportionate Risk Decision Model"
+        subtitle="Operational reference for 7-factor identity validation, behavioral risk scoring, and automated step-up escalation."
+      />
 
       {/* Main Grid: Live Camera Box vs Verification Dossier */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -654,6 +900,16 @@ export function VerificationCenterView({ onRefreshMetrics }: VerificationCenterP
           )}
         </div>
       </div>
+
+      {/* Interactive Suspicious Courier Step-Up Authentication Modal */}
+      {activeAuthCourier && (
+        <SuspiciousUserAuthModal
+          courier={activeAuthCourier}
+          isOpen={!!activeAuthCourier}
+          onClose={() => setActiveAuthCourier(null)}
+          onComplete={handleStepUpComplete}
+        />
+      )}
     </div>
   );
 }

@@ -1009,7 +1009,19 @@ var stories = {
     ]
   }
 };
-function App({ onMeetCourier, onExplore }: { onMeetCourier?: () => void; onExplore?: () => void }) {
+function App({
+  onMeetCourier,
+  onExplore,
+  onLaunchSimulator,
+  onLaunchRadar,
+  hideHeader = false,
+}: {
+  onMeetCourier?: () => void;
+  onExplore?: () => void;
+  onLaunchSimulator?: () => void;
+  onLaunchRadar?: () => void;
+  hideHeader?: boolean;
+}) {
   const motion = useRef5(createMotion());
   const interaction = useRef5(null);
   const drag = useRef5(null);
@@ -1086,46 +1098,57 @@ function App({ onMeetCourier, onExplore }: { onMeetCourier?: () => void; onExplo
     if (!reduced) nudge(1);
     onExplore?.();
   };
-  return <div className={`page ${prototype ? "prototype" : ""}`}>
-    <header className="site-header">
+  return <div className={`page ${prototype ? "prototype" : ""} ${hideHeader ? "no-header" : ""}`}>
+    {!hideHeader && <header className="site-header">
       <a href="/" className="wordmark" aria-label="TrueRide home" onClick={(e) => { e.preventDefault(); onExplore ? onExplore() : (location.href = "/"); }}>
         <svg viewBox="0 0 38 38" aria-hidden="true">
           <defs>
             <radialGradient id="logo-light" cx="30%" cy="20%">
-              <stop stopColor="#06b6d4" />
-              <stop offset="1" stopColor="#3b82f6" />
+              <stop stopColor="#ffd900" />
+              <stop offset="1" stopColor="#06b6d4" />
             </radialGradient>
           </defs>
           <circle cx="19" cy="19" r="16" fill="url(#logo-light)" />
-          <path d="M14 24c0-4 3-7 5-11 2 4 5 7 5 11" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx="19" cy="19" r="3" fill="#a5f3fc" />
+          <path d="M14 24c0-4 3-7 5-11 2 4 5 7 5 11" fill="none" stroke="#070c18" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="19" cy="19" r="3" fill="#ffffff" />
         </svg>
-        <span className="brand-type">TrueRide<small>Continuous Identity AI</small></span>
+        <span className="brand-type">TRUERIDE<small>Continuous Identity Intelligence</small></span>
       </a>
       <nav aria-label="Main navigation">
-        <button onClick={explore}>Explore Orbit</button>
-        {["How it works", "Rented Accounts", "Security Engine"].map((item) => (
-          <button key={item} onClick={() => setStory(item)}>{item}</button>
-        ))}
-        <button onClick={onMeetCourier} style={{ color: "#38bdf8", fontWeight: 600 }}>Enter Dashboard ↗</button>
+        <button onClick={() => { document.getElementById("problem")?.scrollIntoView({ behavior: "smooth" }); }}>The Crisis</button>
+        <button onClick={() => { document.getElementById("categories")?.scrollIntoView({ behavior: "smooth" }); }}>5 Risk Categories</button>
+        <button onClick={() => { document.getElementById("pipeline")?.scrollIntoView({ behavior: "smooth" }); }}>Architecture</button>
+        <button onClick={() => { document.getElementById("scenarios")?.scrollIntoView({ behavior: "smooth" }); }}>9 Scenarios</button>
+        <button onClick={() => { document.getElementById("ethics")?.scrollIntoView({ behavior: "smooth" }); }}>Worker Charter</button>
+        <button onClick={() => setStory("How it works")} style={{ color: "#06b6d4", fontWeight: 600 }}>Interactive Story</button>
+        <button onClick={onLaunchSimulator} style={{ color: "#ffd900", fontWeight: 700 }}>100k Benchmark ⚡</button>
       </nav>
-      <button className="header-cta cursor-pointer" onClick={onMeetCourier}>Meet Your Courier</button>
-    </header>
+      <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+        <button className="header-cta cursor-pointer" onClick={onMeetCourier}>Launch Operations</button>
+      </div>
+    </header>}
     <main><section className="hero" aria-labelledby="hero-title">
       <div className="hero-copy">
-        <p className="eyebrow">TRUERIDE • CONTINUOUS IDENTITY INTELLIGENCE</p>
-        <h1 id="hero-title">Every journey<br />begins<br /><em>with trust.</em></h1>
-        <p className="hero-description">Meet TrueRide — continuous identity intelligence that protects delivery platforms while keeping legitimate riders moving.</p>
-        <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", alignItems: "center" }}>
+        <p className="eyebrow">EXPLAINABLE CONTINUOUS BEHAVIORAL IDENTITY INTELLIGENCE</p>
+        <h1 id="hero-title">Trust the Rider,<br /><em>Not Just the Account.</em></h1>
+        <p className="hero-description">On delivery platforms, identity verification happens once at onboarding. But accounts are routinely rented or handed off. TrueRide continuously calculates explainable 0–100 identity-risk scores in memory (&lt;0.05ms) using motor touch cadence, device fingerprints, and delivery tempo.</p>
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
           <button className="explore-button cursor-pointer" onClick={onMeetCourier}>
-            Meet Your Courier <Arrow />
+            Launch Operations Center <Arrow />
           </button>
           <button
             className="explore-button cursor-pointer"
-            style={{ background: "rgba(15, 23, 42, 0.75)", border: "1px solid rgba(148, 163, 184, 0.25)", color: "#cbd5e1", minWidth: "155px" }}
-            onClick={() => setStory("How it works")}
+            style={{ background: "#161B22", border: "1px solid #30363D", color: "#F1F5F9" }}
+            onClick={() => { const el = document.getElementById("problem"); el?.scrollIntoView({ behavior: "smooth" }); onExplore?.(); }}
           >
-            Explore TrueRide
+            Explore Architecture ↓
+          </button>
+          <button
+            className="explore-button cursor-pointer"
+            style={{ background: "#161B22", border: "1px solid #ffd900", color: "#ffd900", minWidth: "155px" }}
+            onClick={onLaunchSimulator}
+          >
+            100k Benchmark ⚡
           </button>
         </div>
       </div>
@@ -1228,7 +1251,7 @@ var css = `@font-face{font-family:'Orbit DM Sans';font-style:normal;font-weight:
 @media(max-width:759px){.orbit-delivery .brand-type{gap:4px}.orbit-delivery .brand-type small{font-size:7px}.orbit-delivery .site-header .header-cta{font-size:11px;padding:12px 15px}}
 
 .orbit-delivery{width:100%;isolation:isolate;--orbit-bg:radial-gradient(ellipse at 6% 15%,#fffefa 0%,#fbfcff 38%,#f0f6ff 100%);--orbit-ink:#080e2b;--orbit-muted:#7a87aa;--orbit-nav:#4d5a83;--orbit-accent:#0891b2;--orbit-cloud:1;color:var(--orbit-ink)}
-:is(.dark,[data-theme="dark"]) .orbit-delivery:not([data-theme="light"]),.orbit-delivery[data-theme="dark"]{--orbit-bg:radial-gradient(ellipse at 6% 15%,#0b1329 0%,#070c18 50%,#040813 100%);--orbit-ink:#f1f5f9;--orbit-muted:#94a3b8;--orbit-nav:#cbd5e1;--orbit-accent:#06b6d4;--orbit-cloud:.18;color-scheme:dark}
+:is(.dark,[data-theme="dark"]) .orbit-delivery:not([data-theme="light"]),.orbit-delivery[data-theme="dark"]{--orbit-bg:radial-gradient(ellipse at 6% 15%,#0c1427 0%,#070c18 50%,#03060d 100%);--orbit-ink:#f1f5f9;--orbit-muted:#8b949e;--orbit-nav:#c9d1d9;--orbit-accent:#ffd900;--orbit-cloud:.12;color-scheme:dark}
 .orbit-delivery .page{background:var(--orbit-bg);color:var(--orbit-ink)}
 .orbit-delivery .hero-description,.orbit-delivery .about-dialog p{color:var(--orbit-muted)}
 .orbit-delivery .site-header nav button{color:var(--orbit-nav)}
@@ -1237,19 +1260,33 @@ var css = `@font-face{font-family:'Orbit DM Sans';font-style:normal;font-weight:
 .orbit-delivery .about-dialog{background:var(--orbit-bg);color:var(--orbit-ink)}
 .orbit-delivery .wordmark{color:var(--orbit-ink)}
 .orbit-delivery h1{font-family:inherit}
+.orbit-delivery .page.no-header{height:clamp(620px, 80vh, 760px);min-height:580px}
+.orbit-delivery .page.no-header .hero-copy{padding-top:clamp(28px, 6vh, 65px)}
+:is(.dark,[data-theme="dark"]) .orbit-delivery .explore-button{background:#FFD900!important;color:#17191B!important;border-radius:2px!important;font-weight:800!important;font-family:monospace,sans-serif!important;box-shadow:0 0 20px rgba(255,217,0,0.35)!important}
+:is(.dark,[data-theme="dark"]) .orbit-delivery .explore-button:hover{background:#E6C400!important;box-shadow:0 0 30px rgba(255,217,0,0.55)!important}
+:is(.dark,[data-theme="dark"]) .orbit-delivery .header-cta{background:#FFD900!important;color:#17191B!important;border-radius:2px!important;font-weight:800!important;font-family:monospace,sans-serif!important;box-shadow:0 0 15px rgba(255,217,0,0.3)!important}
+:is(.dark,[data-theme="dark"]) .orbit-delivery .header-cta:hover{background:#E6C400!important;box-shadow:0 0 25px rgba(255,217,0,0.5)!important}
+:is(.dark,[data-theme="dark"]) .orbit-delivery .site-header nav button:hover{color:#FFD900!important}
+:is(.dark,[data-theme="dark"]) .orbit-delivery .eyebrow{color:#06B6D4!important;font-family:monospace,sans-serif!important}
 `;
 function OrbitDeliveryHero({
   theme = "dark",
   assetBaseUrl = "https://cdn.jsdelivr.net/gh/fadeichev2121/planet@b3f70fbf4b577845b1d9d5947c9410fb4d925dae",
   onMeetCourier,
   onExplore,
+  onLaunchSimulator,
+  onLaunchRadar,
+  hideHeader = false,
 }: {
   theme?: "auto" | "light" | "dark";
   assetBaseUrl?: string;
   onMeetCourier?: () => void;
   onExplore?: () => void;
+  onLaunchSimulator?: () => void;
+  onLaunchRadar?: () => void;
+  hideHeader?: boolean;
 }) {
-  return <AssetBaseContext.Provider value={assetBaseUrl.replace(/\/$/, "") + "/"}><div className="orbit-delivery" data-theme={theme}><style>{css}</style><App onMeetCourier={onMeetCourier} onExplore={onExplore} /></div></AssetBaseContext.Provider>;
+  return <AssetBaseContext.Provider value={assetBaseUrl.replace(/\/$/, "") + "/"}><div className="orbit-delivery" data-theme={theme}><style>{css}</style><App onMeetCourier={onMeetCourier} onExplore={onExplore} onLaunchSimulator={onLaunchSimulator} onLaunchRadar={onLaunchRadar} hideHeader={hideHeader} /></div></AssetBaseContext.Provider>;
 }
 export {
   OrbitDeliveryHero as default

@@ -1,0 +1,32 @@
+"=== TrueRide System Evaluation Benchmark Summary ==="
+"Metric","Value"
+"Total Evaluated",15
+"Precision (%)",100
+"Recall (%)",83.3
+"F1 Score (%)",90.9
+"False Positive Rate (%)",0
+"Challenge Rate (%)",33.3
+"True Positives",5
+"False Positives",0
+"True Negatives",9
+"False Negatives",1
+"Average Latency (ms)",0.13
+"P95 Latency (ms)",0.95
+
+"=== Detailed Test Item Results ==="
+"itemId","name","groundTruth","scenarioType","predictedRiskLevel","overallScore","recommendedAction","classification","isCorrect","latencyMs"
+TEST-01,"Routine Morning Shift #1",LEGITIMATE,NORMAL,LOW,1,ALLOW,TN,true,0.95
+TEST-02,"Routine Afternoon Shift #2",LEGITIMATE,NORMAL,LOW,1,ALLOW,TN,true,0.06
+TEST-03,"Routine Evening Peak #3",LEGITIMATE,NORMAL,LOW,1,ALLOW,TN,true,0.04
+TEST-04,"Legitimate Phone Upgrade (Pixel 8)",LEGITIMATE,NEW_DEVICE,LOW,8.6,ALLOW,TN,true,0.05
+TEST-05,"Legitimate Backup Phone (OnePlus 11)",LEGITIMATE,NEW_DEVICE,LOW,8.6,ALLOW,TN,true,0.04
+TEST-06,"Adjacent Zone Travel (Indiranagar)",LEGITIMATE,ZONE_CHANGE,LOW,4.3,ALLOW,TN,true,0.04
+TEST-07,"Overnight Incentive Shift (11 PM)",LEGITIMATE,SHIFT_CHANGE,LOW,8.8,ALLOW,TN,true,0.05
+TEST-08,"Rain Moisture Touch Glitch",LEGITIMATE,ENVIRONMENTAL_NOISE,LOW,10.3,ALLOW,TN,true,0.04
+TEST-09,"New Driver Sparse History",LEGITIMATE,SPARSE_HISTORY,LOW,13.4,MONITOR,TN,true,0.42
+TEST-10,"Same Phone Same City Handoff #1",HANDOFF,SAME_DEVICE_HANDOFF,MEDIUM,42,STEP_UP_VERIFY,TP,true,0.11
+TEST-11,"Same Phone Same City Handoff #2",HANDOFF,SAME_DEVICE_HANDOFF,MEDIUM,47,STEP_UP_VERIFY,TP,true,0.08
+TEST-12,"Unfamiliar Device Rented Account with Payout Route Change",HANDOFF,NEW_DEVICE_HANDOFF,MEDIUM,52.3,STEP_UP_VERIFY,TP,true,0.04
+TEST-13,"Multi-Session Persistent Behavioral Drift",HANDOFF,MULTI_SESSION_DRIFT,MEDIUM,42,STEP_UP_VERIFY,TP,true,0.02
+TEST-14,"Unfamiliar Device Sudden Shift & Navigation Hesitation",HANDOFF,NEW_DEVICE_HANDOFF,MEDIUM,55.6,STEP_UP_VERIFY,TP,true,0.02
+TEST-15,"Automated Clicker / Scripted Bot Pattern",HANDOFF,SAME_DEVICE_HANDOFF,LOW,17.8,ALLOW,FN,false,0.03

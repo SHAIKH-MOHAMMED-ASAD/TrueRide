@@ -63,7 +63,6 @@ export function Navbar({
 
   const navItems = [
     { id: "dashboard" as ActiveTab, label: "Overview", icon: Activity },
-    { id: "radar" as ActiveTab, label: "Fleet Radar", icon: Radio },
     { id: "sessions" as ActiveTab, label: "Sessions", icon: Layers },
     { id: "simulator" as ActiveTab, label: "Simulator", icon: Sliders },
     { id: "cases" as ActiveTab, label: "Review Queue", icon: ShieldAlert, count: openCasesCount },

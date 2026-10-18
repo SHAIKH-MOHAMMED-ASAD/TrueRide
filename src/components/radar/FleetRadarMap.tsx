@@ -13,6 +13,8 @@ import {
   Radio,
   ExternalLink,
   ShieldAlert,
+  Minimize2,
+  Activity,
 } from "lucide-react";
 import {
   FleetCourier,
@@ -21,6 +23,7 @@ import {
   MUMBAI_GEO_BOUNDS,
   courierToLatLng,
 } from "@/lib/services/fleetRadarData";
+import { Mumbai100kVisualizer } from "./Mumbai100kVisualizer";
 
 export interface FleetRadarMapProps {
   couriers: FleetCourier[];
@@ -34,6 +37,8 @@ export interface FleetRadarMapProps {
   setShowCorridors: (v: boolean | ((prev: boolean) => boolean)) => void;
   mapApiKey?: string;
   mapProvider?: string;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
 /**
@@ -57,6 +62,8 @@ export function FleetRadarMap({
   setShowCorridors,
   mapApiKey,
   mapProvider,
+  isExpanded,
+  onToggleExpand,
 }: FleetRadarMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({
@@ -68,6 +75,7 @@ export function FleetRadarMap({
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [is100kMode, setIs100kMode] = useState<boolean>(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const panStart = useRef({ x: 0, y: 0 });
 
@@ -97,9 +105,10 @@ export function FleetRadarMap({
     if (!isDragging) return;
     const dx = (e.clientX - dragStart.current.x) / zoom;
     const dy = (e.clientY - dragStart.current.y) / zoom;
+    const maxPan = 400 * zoom;
     setPan({
-      x: Math.max(-180, Math.min(180, panStart.current.x + dx)),
-      y: Math.max(-180, Math.min(180, panStart.current.y + dy)),
+      x: Math.max(-maxPan, Math.min(maxPan, panStart.current.x + dx)),
+      y: Math.max(-maxPan, Math.min(maxPan, panStart.current.y + dy)),
     });
   };
 
@@ -107,8 +116,14 @@ export function FleetRadarMap({
     setIsDragging(false);
   };
 
-  const handleZoomIn = () => setZoom((z) => Math.min(2.5, +(z + 0.25).toFixed(2)));
-  const handleZoomOut = () => setZoom((z) => Math.max(0.8, +(z - 0.25).toFixed(2)));
+  const handleWheel = (e: React.WheelEvent) => {
+    e.stopPropagation();
+    const delta = e.deltaY < 0 ? 0.15 : -0.15;
+    setZoom((z) => Math.max(0.75, Math.min(3.0, +(z + delta).toFixed(2))));
+  };
+
+  const handleZoomIn = () => setZoom((z) => Math.min(3.0, +(z + 0.25).toFixed(2)));
+  const handleZoomOut = () => setZoom((z) => Math.max(0.75, +(z - 0.25).toFixed(2)));
 
   const handleCenterOnSelected = useCallback(() => {
     if (!selectedCourier) {
@@ -117,9 +132,9 @@ export function FleetRadarMap({
       return;
     }
     // Focused geographic center: BKC is at (48, 44). Center offset relative to active viewport:
-    const targetX = (48 - selectedCourier.x) * 5;
-    const targetY = (46 - selectedCourier.y) * 5;
-    setZoom(1.5);
+    const targetX = (48 - selectedCourier.x) * 6;
+    const targetY = (46 - selectedCourier.y) * 6;
+    setZoom(1.6);
     setPan({ x: targetX, y: targetY });
   }, [selectedCourier]);
 
@@ -158,11 +173,27 @@ export function FleetRadarMap({
           <div className="w-2 h-2 rounded-[1px] bg-[#FFD900] animate-pulse" />
           <span className="font-bold tracking-wider text-white">MUMBAI FLEET RADAR</span>
           <span className="text-[#8B8D8C]">|</span>
-          <span className="text-[#FFD900] font-semibold">{couriers.length} Active Couriers</span>
+          <span className="text-[#FFD900] font-semibold">
+            {is100kMode ? "100,000 Live Sessions" : `${couriers.length} Active Couriers`}
+          </span>
         </div>
 
         {/* Right: Tactical Overlays Toggles */}
         <div className="pointer-events-auto flex items-center gap-1.5 bg-[#2D302F]/95 backdrop-blur-md p-1 border border-[#3F4241] rounded-[2px] shadow-sm">
+          {/* 100k Mega-Fleet Visualizer Mode */}
+          <button
+            type="button"
+            onClick={() => setIs100kMode((v) => !v)}
+            className={`px-2.5 py-1 text-xs font-mono rounded-[2px] flex items-center gap-1.5 transition-all cursor-pointer ${
+              is100kMode
+                ? "bg-[#22C55E] text-[#17191B] font-bold shadow-xs"
+                : "text-[#D5D7D6] hover:bg-[#383B3A] hover:text-white"
+            }`}
+          >
+            <Activity className="w-3 h-3" />
+            <span>100k Visual Fleet</span>
+          </button>
+
           {/* Express Corridors */}
           <button
             type="button"
@@ -241,6 +272,16 @@ export function FleetRadarMap({
         >
           <Maximize2 className="w-4 h-4" />
         </button>
+        {onToggleExpand && (
+          <button
+            type="button"
+            onClick={onToggleExpand}
+            title={isExpanded ? "Restore Grid Layout" : "Expand Tactical Map to Full Width"}
+            className="p-1.5 text-[#FFD900] hover:text-white hover:bg-[#383B3A] rounded-[2px] transition cursor-pointer border-t border-[#3F4241]"
+          >
+            {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+        )}
       </div>
 
       {/* Map Viewport Area */}
@@ -250,23 +291,21 @@ export function FleetRadarMap({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onWheel={handleWheel}
       >
-        {/* Calibrated SVG Tactical Map Framing
-            Geographic bounding box focused on Mumbai Active Transit Zone:
-            X: 160 to 860 (Width: 700)
-            Y: 100 to 860 (Height: 760)
-            Center: BKC (480, 440)
-            Immediately visible without scrolling!
-        */}
-        <svg
-          viewBox="160 100 700 760"
-          preserveAspectRatio="xMidYMid meet"
-          className="w-full h-full transition-transform duration-75"
-          style={{
-            transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
-            transformOrigin: "center center",
-          }}
-        >
+        {is100kMode ? (
+          <Mumbai100kVisualizer
+            zoom={zoom}
+            pan={pan}
+            showHeatmap={showHeatmap}
+            className="w-full h-full"
+          />
+        ) : (
+          <svg
+            viewBox="160 100 700 760"
+            preserveAspectRatio="xMidYMid meet"
+            className="w-full h-full block"
+          >
           <defs>
             {/* Background Grid Pattern */}
             <pattern id="tacticalGrid" width="35" height="35" patternUnits="userSpaceOnUse">
@@ -289,6 +328,16 @@ export function FleetRadarMap({
           {/* Deep Navy/Charcoal Sea Base */}
           <rect x="0" y="0" width="1000" height="1000" fill="#13161C" />
           <rect x="0" y="0" width="1000" height="1000" fill="url(#tacticalGrid)" />
+
+          {/* Interactive Tactical Layer with BKC center transform */}
+          <g
+            id="tacticalInteractiveViewport"
+            style={{
+              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+              transformOrigin: "480px 440px",
+              transition: isDragging ? "none" : "transform 0.12s ease-out",
+            }}
+          >
 
           {/* Mumbai Landmass Silhouette */}
           <g id="mumbaiLandmass" opacity="0.95">
@@ -553,7 +602,7 @@ export function FleetRadarMap({
 
           {/* 60 Courier Markers */}
           <g id="courierMarkers">
-            {couriers.map((c) => {
+            {couriers.map((c, index) => {
               const isSelected = c.id === selectedCourier.id;
               const color = getRiskColor(c.riskLevel);
               const cx = c.x * 10;
@@ -561,10 +610,13 @@ export function FleetRadarMap({
 
               return (
                 <g
-                  key={c.id}
+                  key={`${c.id}-${index}`}
                   onClick={() => onSelectCourier(c)}
                   className="cursor-pointer group"
                 >
+                  {/* Invisible Hitbox for easy clicking */}
+                  <circle cx={cx} cy={cy} r="14" fill="transparent" />
+
                   {/* Selected Ripple Halos */}
                   {isSelected && (
                     <>
@@ -650,7 +702,11 @@ export function FleetRadarMap({
             <circle cx="480" cy="440" r="140" fill="none" stroke="#FFD900" strokeWidth="0.75" strokeDasharray="3 3" />
             <circle cx="480" cy="440" r="280" fill="none" stroke="#FFD900" strokeWidth="0.75" strokeDasharray="4 5" />
           </g>
+
+          {/* Close interactive layer */}
+          </g>
         </svg>
+        )}
       </div>
 
       {/* Bottom Map Status & Provider Integration Bar (TrueRide Industrial Style) */}

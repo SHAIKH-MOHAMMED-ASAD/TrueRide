@@ -14,9 +14,17 @@ import {
   Send,
   Smartphone,
   MapPin,
+  Key,
+  Sparkles,
+  Sliders,
+  Save,
 } from "lucide-react";
 import { RiskBadge, ActionBadge, EvidenceQualityBadge } from "../common/RiskBadge";
 import { CategoryRadarBar } from "../common/CategoryRadarBar";
+import {
+  SuspiciousUserAuthModal,
+  SuspiciousCourierTarget,
+} from "../verification/SuspiciousUserAuthModal";
 
 interface CaseDetailModalProps {
   caseId: string;
@@ -38,6 +46,14 @@ export function CaseDetailModal({
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(
     null
   );
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Editable case fields
+  const [editStatus, setEditStatus] = useState("NEW_ALERT");
+  const [editPriority, setEditPriority] = useState("HIGH");
+  const [editReviewer, setEditReviewer] = useState("T&S Analyst (Demo Role)");
+  const [editNotes, setEditNotes] = useState("");
+  const [isUpdatingMetadata, setIsUpdatingMetadata] = useState(false);
 
   const fetchDetails = async () => {
     try {
@@ -45,6 +61,12 @@ export function CaseDetailModal({
       const res = await fetch(`/api/cases/${caseId}`);
       const data = await res.json();
       setCaseData(data.case);
+      if (data.case) {
+        setEditStatus(data.case.status || "NEW_ALERT");
+        setEditPriority(data.case.priority || "HIGH");
+        setEditReviewer(data.case.assignedReviewer || "T&S Analyst (Demo Role)");
+        setEditNotes(data.case.notes || "");
+      }
     } catch (err) {
       console.error("Failed to load case detail:", err);
     } finally {
@@ -55,6 +77,38 @@ export function CaseDetailModal({
   useEffect(() => {
     fetchDetails();
   }, [caseId]);
+
+  const handleUpdateCaseMetadata = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsUpdatingMetadata(true);
+      setMessage(null);
+
+      const res = await fetch(`/api/cases/${caseId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: editStatus,
+          priority: editPriority,
+          assignedReviewer: editReviewer,
+          notes: editNotes,
+          actor: editReviewer || "ANALYST",
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update case");
+
+      setMessage({ text: "Case parameters updated and recorded in audit trail.", type: "success" });
+      await fetchDetails();
+      if (onDecisionRecorded) onDecisionRecorded();
+    } catch (err: any) {
+      console.error("Error updating case:", err);
+      setMessage({ text: err.message, type: "error" });
+    } finally {
+      setIsUpdatingMetadata(false);
+    }
+  };
 
   const handleSubmitDecision = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +169,27 @@ export function CaseDetailModal({
   const rider = caseData.rider;
   const baseline = rider?.baselines?.[0];
 
+  const courierTarget: SuspiciousCourierTarget = {
+    id: caseData.riderId,
+    name: rider?.name || caseData.riderId,
+    riskScore: assessment?.riskScore ?? 85,
+    riskLevel: (assessment?.riskBand || "L2").replace("L", "L"),
+    zone: session?.cityZone || "Mumbai Central",
+    avatarUrl: rider?.profilePhotoUrl,
+    caseId: caseData.id,
+    triggers: (assessment?.signals || []).map((s: any) => s.ruleName || s.name || s.category),
+  };
+
+  const handleAuthComplete = (res: any) => {
+    setShowAuthModal(false);
+    setMessage({
+      text: `Step-Up Authentication ${res.outcome}: Token ${res.token ? res.token.slice(0, 16) + "..." : "cleared"} recorded in audit ledger. Status updated to ${res.decision}.`,
+      type: res.outcome === "AUTHENTICATED_CLEARED" ? "success" : "error",
+    });
+    fetchDetails();
+    if (onDecisionRecorded) onDecisionRecorded();
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
       <div className="relative w-full max-w-5xl bg-[#FFFFFF] border border-[#D9D6CD] rounded-[2px] shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col font-sans">
@@ -160,6 +235,42 @@ export function CaseDetailModal({
               {message.text}
             </div>
           )}
+
+          {/* Suspicious Courier Step-Up Authentication Action Banner */}
+          <div className="p-4 rounded-[2px] bg-[#070C18] border border-[#06B6D4]/40 text-white shadow-lg space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-[2px] bg-[#06B6D4]/20 border border-[#06B6D4]/50 flex items-center justify-center shrink-0 text-[#06B6D4]">
+                  <Key className="w-5 h-5 text-[#06B6D4]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold tracking-widest text-[#06B6D4] uppercase bg-[#06B6D4]/10 px-2 py-0.5 border border-[#06B6D4]/30">
+                      STEP-UP AUTHENTICATION PROTOCOL
+                    </span>
+                    <span className="text-[10px] font-mono text-[#8B8D8C]">
+                      2-FACTOR ZERO-KNOWLEDGE
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold text-white tracking-wide mt-1">
+                    Execute Step-Up Verification Challenge
+                  </h3>
+                  <p className="text-xs text-[#94A3B8] leading-relaxed mt-0.5">
+                    Trigger 2FA step-up challenge for <strong className="text-white">{rider?.name || caseData.riderId}</strong> (SIM OTP + Live Facial Biometrics). Automatically clears hold upon verified match.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowAuthModal(true)}
+                className="shrink-0 px-4 py-2.5 rounded-[2px] bg-[#FFD900] hover:bg-[#e6c400] text-[#070C18] font-bold text-xs font-mono tracking-wider uppercase transition cursor-pointer flex items-center justify-center gap-2 shadow-md shadow-[#FFD900]/20"
+              >
+                <Camera className="w-4 h-4 text-[#070C18]" />
+                <span>Launch Live Challenge</span>
+              </button>
+            </div>
+          </div>
 
           {/* Assessment Summary Strip */}
           <div className="p-4 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] flex flex-wrap items-center justify-between gap-3 text-xs shadow-xs">
@@ -335,6 +446,100 @@ export function CaseDetailModal({
             </div>
           </div>
 
+          {/* Quick Case Parameters & Status Update Form */}
+          <form
+            onSubmit={handleUpdateCaseMetadata}
+            className="p-4 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] shadow-xs space-y-3"
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-[#D9D6CD]">
+              <div className="flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-[#17191B]" />
+                <h3 className="font-bold text-[#17191B] text-xs uppercase tracking-wider font-mono">
+                  Update Case Parameters &amp; Notes
+                </h3>
+              </div>
+              <span className="text-[10px] text-[#24813A] font-mono font-bold">
+                Logs to Immutable Audit Trail
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div>
+                <label className="text-[#5D6266] block mb-1 font-mono text-[11px] font-bold">
+                  Investigation Status:
+                </label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="w-full p-2 bg-[#F8F9FA] border border-[#D9D6CD] rounded-[2px] text-[#17191B] font-mono text-xs focus:outline-none focus:border-[#17191B]"
+                >
+                  <option value="NEW_ALERT">NEW_ALERT</option>
+                  <option value="UNDER_INVESTIGATION">UNDER_INVESTIGATION</option>
+                  <option value="VERIFICATION_REQUIRED">VERIFICATION_REQUIRED</option>
+                  <option value="MONITORING">MONITORING</option>
+                  <option value="VERIFIED_LEGITIMATE">VERIFIED_LEGITIMATE</option>
+                  <option value="CONFIRMED_ACCOUNT_HANDOFF">CONFIRMED_ACCOUNT_HANDOFF</option>
+                  <option value="DISMISSED_ALERT">DISMISSED_ALERT</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[#5D6266] block mb-1 font-mono text-[11px] font-bold">
+                  Priority Band:
+                </label>
+                <select
+                  value={editPriority}
+                  onChange={(e) => setEditPriority(e.target.value)}
+                  className="w-full p-2 bg-[#F8F9FA] border border-[#D9D6CD] rounded-[2px] text-[#17191B] font-mono text-xs focus:outline-none focus:border-[#17191B]"
+                >
+                  <option value="CRITICAL">CRITICAL</option>
+                  <option value="HIGH">HIGH</option>
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="LOW">LOW</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[#5D6266] block mb-1 font-mono text-[11px] font-bold">
+                  Assigned Reviewer:
+                </label>
+                <input
+                  type="text"
+                  value={editReviewer}
+                  onChange={(e) => setEditReviewer(e.target.value)}
+                  className="w-full p-2 bg-[#F8F9FA] border border-[#D9D6CD] rounded-[2px] text-[#17191B] font-mono text-xs focus:outline-none focus:border-[#17191B]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[#5D6266] block mb-1 font-mono text-[11px] font-bold">
+                Investigative Notes / Case Journal:
+              </label>
+              <textarea
+                rows={2}
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Add ongoing investigation findings, carrier ticket IDs, or physical spot check notes..."
+                className="w-full p-2 bg-[#F8F9FA] border border-[#D9D6CD] rounded-[2px] text-[#17191B] text-xs focus:outline-none focus:border-[#17191B]"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[10px] text-[#8B8D8C] font-mono">
+                Updates database record and appends CASE_UPDATED event to audit journal
+              </span>
+              <button
+                type="submit"
+                disabled={isUpdatingMetadata}
+                className="px-3.5 py-1.5 rounded-[2px] bg-[#17191B] hover:bg-[#2F3130] text-white font-mono text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+              >
+                <Save className="w-3.5 h-3.5 text-[#FFD900]" />
+                <span>{isUpdatingMetadata ? "Saving Update..." : "Update Case & Audit"}</span>
+              </button>
+            </div>
+          </form>
+
           {/* Previous Review Decisions Timeline */}
           {caseData.decisions?.length > 0 && (
             <div className="p-4 rounded-[2px] bg-[#FFFFFF] border border-[#D9D6CD] shadow-xs">
@@ -447,6 +652,15 @@ export function CaseDetailModal({
           </form>
         </div>
       </div>
+
+      {showAuthModal && (
+        <SuspiciousUserAuthModal
+          courier={courierTarget}
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onComplete={handleAuthComplete}
+        />
+      )}
     </div>
   );
 }
