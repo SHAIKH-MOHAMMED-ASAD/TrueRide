@@ -51,7 +51,7 @@ export async function requestVerification(params: {
     });
 
     return event;
-  });
+  }, { timeout: 25000, maxWait: 10000 });
 }
 
 export async function recordVerificationResult(params: {
@@ -143,7 +143,7 @@ export async function recordVerificationResult(params: {
     });
 
     return updated;
-  });
+  }, { timeout: 25000, maxWait: 10000 });
 }
 
 export interface VoiceChallengePayload {
@@ -396,7 +396,7 @@ export async function executeStepUpAuthentication(params: {
       verificationEvent: event,
       updatedCase,
     };
-  });
+  }, { timeout: 25000, maxWait: 10000 });
 }
 
 export interface VoiceChallengeExecutionParams {
@@ -576,6 +576,6 @@ export async function executeVoiceChallenge(params: VoiceChallengeExecutionParam
       verificationEvent: event,
       updatedCase,
     };
-  });
+  }, { timeout: 25000, maxWait: 10000 });
 }
 

@@ -280,7 +280,8 @@ export async function ingestSessionEvent(
         (assessment.recommendedAction === "STEP_UP_VERIFY" || assessment.overallScore >= 45))
     ) {
       const caseCount = await tx.securityCase.count();
-      const caseNumber = `CASE-${new Date().getFullYear()}-${String(caseCount + 101).padStart(4, "0")}`;
+      const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const caseNumber = `CASE-${new Date().getFullYear()}-${String(caseCount + 101).padStart(4, "0")}-${randomSuffix}`;
       const initialStatus =
         assessment.recommendedAction === "STEP_UP_VERIFY"
           ? "VERIFICATION_REQUIRED"
@@ -340,7 +341,7 @@ export async function ingestSessionEvent(
       riskAssessment,
       createdCase,
     };
-  });
+  }, { timeout: 25000, maxWait: 10000 });
 
   return {
     success: true,

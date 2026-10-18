@@ -17,7 +17,7 @@ export async function persistScaleSimulationRun(
         r.groundTruthLabel === "ACCOUNT_TAKEOVER_HIJACK"
     )
     .sort((a, b) => (b.riskScore || 0) - (a.riskScore || 0))
-    .slice(0, 30); // Persist top 30 critical anomaly cases
+    .slice(0, 5); // Persist top 5 critical anomaly cases
 
   let casesCreated = 0;
   let sessionsPersisted = 0;

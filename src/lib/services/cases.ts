@@ -167,7 +167,7 @@ export async function recordCaseDecision(params: {
     });
 
     return updated;
-  });
+  }, { timeout: 25000, maxWait: 10000 });
 
   return updatedCase;
 }
@@ -313,9 +313,9 @@ export async function createSecurityCase(params: CreateCaseParams) {
             },
           ];
 
-    for (const sig of signals) {
-      await tx.riskSignal.create({
-        data: {
+    if (signals.length > 0) {
+      await tx.riskSignal.createMany({
+        data: signals.map((sig) => ({
           assessmentId: assessment.id,
           category: sig.category || "BEHAVIORAL",
           signalCode: sig.signalCode || "SIGNAL_FLAG",
@@ -326,13 +326,14 @@ export async function createSecurityCase(params: CreateCaseParams) {
           contribution: sig.contribution || 0.3,
           explanation: sig.explanation || "Manual investigation evidence point",
           evidenceQuality: sig.evidenceQuality || "HIGH",
-        },
+        })),
       });
     }
 
     // 5. Generate case number
     const caseCount = await tx.securityCase.count();
-    const caseNumber = `CASE-${new Date().getFullYear()}-${String(caseCount + 101).padStart(4, "0")}`;
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const caseNumber = `CASE-${new Date().getFullYear()}-${String(caseCount + 101).padStart(4, "0")}-${randomSuffix}`;
 
     // 6. Create Security Case
     const secCase = await tx.securityCase.create({
@@ -379,7 +380,7 @@ export async function createSecurityCase(params: CreateCaseParams) {
     });
 
     return secCase;
-  });
+  }, { timeout: 25000, maxWait: 10000 });
 }
 
 export async function updateSecurityCase(caseId: string, params: UpdateCaseParams) {
@@ -478,5 +479,5 @@ export async function updateSecurityCase(caseId: string, params: UpdateCaseParam
     });
 
     return updated;
-  });
+  }, { timeout: 25000, maxWait: 10000 });
 }

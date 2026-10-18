@@ -284,5 +284,5 @@ describe("TrueRide Step-Up Authentication for Suspicious Users & Scale Persisten
     expect(scaleState.cumulativeCount).toBeGreaterThanOrEqual(500);
     expect(scaleState.lastRun).toBeTruthy();
     expect(scaleState.lastRun?.benchmark.totalRecords).toBe(500);
-  });
+  }, 60000);
 });

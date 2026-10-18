@@ -56,3 +56,4 @@ prisma/*.db-journal
 /captures
 /uploads
 
+.neon
