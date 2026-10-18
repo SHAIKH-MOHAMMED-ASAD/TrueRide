@@ -267,13 +267,13 @@ describe("TrueRide Step-Up Authentication for Suspicious Users & Scale Persisten
     expect(benchmarkResult.totalRecords).toBe(500);
     expect(benchmarkResult.sampleRecords.length).toBeGreaterThan(0);
 
-    // Persist scale simulation run to SQLite
+    // Persist scale simulation run to database
     const persistenceResult = await persistScaleSimulationRun(records, benchmarkResult);
     expect(persistenceResult.success).toBe(true);
     expect(persistenceResult.sessionsPersisted).toBeGreaterThan(0);
     expect(persistenceResult.casesCreated).toBeGreaterThan(0);
 
-    // Verify SQLite counts increased
+    // Verify database counts increased
     const finalSessionCount = await prisma.sessionEvent.count();
     const finalCaseCount = await prisma.securityCase.count();
     expect(finalSessionCount).toBeGreaterThan(initialSessionCount);

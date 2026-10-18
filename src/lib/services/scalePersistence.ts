@@ -24,7 +24,7 @@ export async function persistScaleSimulationRun(
 
   for (const record of anomalousRecords) {
     try {
-      // Ensure rider exists in SQLite
+      // Ensure rider exists in database
       let rider = await prisma.rider.findUnique({
         where: { riderId: record.riderId },
       });

@@ -1,23 +1,25 @@
 import { prisma } from "../prisma";
 import { ingestSessionEvent } from "./ingestion";
 import { recordCaseDecision } from "./cases";
-import { requestVerification, recordVerificationResult } from "./verification";
+import { requestVerification } from "./verification";
 import { resetScaleBenchmarkStore } from "./scaleBenchmarkStore";
 
 export async function resetAndSeedDatabase() {
   console.log("--> Purging existing TrueRide records...");
   resetScaleBenchmarkStore();
 
-  // Purge in relational order
-  await prisma.auditEvent.deleteMany();
-  await prisma.reviewDecision.deleteMany();
-  await prisma.verificationEvent.deleteMany();
-  await prisma.securityCase.deleteMany();
-  await prisma.riskSignal.deleteMany();
-  await prisma.riskAssessment.deleteMany();
-  await prisma.sessionEvent.deleteMany();
-  await prisma.behavioralBaseline.deleteMany();
-  await prisma.rider.deleteMany();
+  // Purge in relational order within a single transaction
+  await prisma.$transaction([
+    prisma.auditEvent.deleteMany(),
+    prisma.reviewDecision.deleteMany(),
+    prisma.verificationEvent.deleteMany(),
+    prisma.securityCase.deleteMany(),
+    prisma.riskSignal.deleteMany(),
+    prisma.riskAssessment.deleteMany(),
+    prisma.sessionEvent.deleteMany(),
+    prisma.behavioralBaseline.deleteMany(),
+    prisma.rider.deleteMany(),
+  ]);
 
   console.log("--> Seeding fictional rider profiles...");
 
@@ -85,9 +87,9 @@ export async function resetAndSeedDatabase() {
     },
   ];
 
-  for (const r of riders) {
-    await prisma.rider.create({ data: r });
-  }
+  await prisma.rider.createMany({
+    data: riders,
+  });
 
   console.log("--> Seeding individualized behavioral baselines...");
 
@@ -203,9 +205,9 @@ export async function resetAndSeedDatabase() {
     },
   ];
 
-  for (const b of baselines) {
-    await prisma.behavioralBaseline.create({ data: b });
-  }
+  await prisma.behavioralBaseline.createMany({
+    data: baselines,
+  });
 
   console.log("--> Ingesting historical baseline sessions through pipeline...");
 
@@ -293,7 +295,7 @@ export async function resetAndSeedDatabase() {
 
   if (vikramEvent.caseId) {
     // Initiate verification request for Vikram
-    const ver = await requestVerification({
+    await requestVerification({
       riderId: "RDR-9105",
       sessionId: "SESS-ALERT-9105",
       caseId: vikramEvent.caseId,
@@ -302,7 +304,7 @@ export async function resetAndSeedDatabase() {
   }
 
   // Seed a resolved legitimate case (e.g. for Deepa Nair)
-  const deepaEvent = await ingestSessionEvent({
+  await ingestSessionEvent({
     eventId: "EVT-SEED-LEGIT-DEEPA",
     riderId: "RDR-6032",
     sessionId: "SESS-RESOLVED-6032",

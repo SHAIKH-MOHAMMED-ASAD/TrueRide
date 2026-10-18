@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { runSystemEvaluation } from "@/lib/services/evaluation";
 import { getScaleBenchmarkState } from "@/lib/services/scaleBenchmarkStore";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const [
       ridersCount,

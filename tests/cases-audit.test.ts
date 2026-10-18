@@ -10,7 +10,7 @@ import {
 describe("Review Queue & Audit Trail: Add New and Update Cases", () => {
   const testRiderId = "r_0042"; // Sanjay Verma
 
-  it("Scenario 1: Manually creating a new case persists to SQLite and emits CASE_CREATED audit event", async () => {
+  it("Scenario 1: Manually creating a new case persists to database and emits CASE_CREATED audit event", async () => {
     const timestamp = Date.now();
     const newCase = await createSecurityCase({
       riderId: testRiderId,

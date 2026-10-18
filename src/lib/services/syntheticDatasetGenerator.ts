@@ -200,12 +200,12 @@ export function generateSyntheticDataset(
     let deviceId = baseline.knownDevices[0];
     let deviceModel = DEVICE_MODELS[i % DEVICE_MODELS.length];
     let operatingZone = baseline.primaryZones[0];
-    let city = metro.city;
+    const city = metro.city;
     let avgIntervalSec = +(baseline.avgInteractionInterval + (rand() * 2 - 1) * 1.5).toFixed(1);
     let interactionPattern: SyntheticSessionRecord["interactionPattern"] = "NORMAL_RAPID";
     let acceptanceRate = +(baseline.typicalAcceptanceRate - rand() * 0.05).toFixed(2);
     let completionRate = +(baseline.typicalCompletionRate - rand() * 0.03).toFixed(2);
-    let sessionDurationMinutes = Math.floor(baseline.avgSessionDuration + (rand() * 40 - 20));
+    const sessionDurationMinutes = Math.floor(baseline.avgSessionDuration + (rand() * 40 - 20));
     let sessionTerminationType = "NORMAL_LOGOUT";
     let securityChanges: SyntheticSessionRecord["securityChanges"] | undefined = undefined;
 
